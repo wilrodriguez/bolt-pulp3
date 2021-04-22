@@ -21,5 +21,7 @@ hierarchy:
     path: 'common.yaml'
 
 plan_hierarchy:
+  - name: 'Local overrides (not in git)'
+    path: 'LOCAL.yaml'
   - name: 'common'
     path: 'common.yaml'

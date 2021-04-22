@@ -1,1 +1,4 @@
---- {}
+---
+pulp::in_one_container::container_name: pulp
+pulp::in_one_container::container_image: pulp/pulp
+pulp::in_one_container::container_port: 8080

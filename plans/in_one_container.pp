@@ -1,16 +1,18 @@
 # @summary Manage a Pulp-in-one-container
 # @param targets A single target to run on (the container host)
 plan pulp::in_one_container (
-  TargetSpec $targets = "localhost",
-  Stdlib::AbsolutePath $container_root = system::env('PWD'),
-  String[1] $user = system::env('USER'),
-  String[1] $container_name = 'pulp',
-  String[1] $container_image = 'pulp/pulp',
-  Stdlib::Port $container_port = 8080,
-  # FIXME not set up yet:
-  Array[Stdlib::AbsolutePath] $import_paths = [ "${container_root}/run/ISOs/unpacked" ],
-  Boolean $noop = false,
+  TargetSpec           $targets         = "localhost",
+  String[1]            $user            = system::env('USER'),
+  Stdlib::AbsolutePath $container_root  = system::env('PWD'),
+  String[1]            $container_name  = lookup('pulp::in_one_container::container_name')|$k|{'pulp'},
+  String[1]            $container_image = lookup('pulp::in_one_container::container_image')|$k|{'pulp/pulp'},
+  Stdlib::Port         $container_port  = lookup('pulp::in_one_container::container_port')|$k|{8080},
   Optional[Enum[podman,docker]] $runtime = undef,
+  # FIXME not set up yet:
+  Array[Stdlib::AbsolutePath] $import_paths = lookup('pulp::in_one_container::import_paths')|$k|{
+    [ "${container_root}/run/ISOs/unpacked" ]
+  },
+  Boolean $noop = false,
   #  Enum[start,stop,destroy,directories,reset-admin-password] $action = 'start',
 ) {
   $host = get_target($targets)

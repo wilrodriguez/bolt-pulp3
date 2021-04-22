@@ -11,6 +11,8 @@
 /coverage/
 /bin/
 /doc/
+/data/LOCAL.yaml
+/data/local.yaml
 /Gemfile.local
 /Gemfile.lock
 /junit/
