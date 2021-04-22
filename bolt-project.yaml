@@ -1,0 +1,6 @@
+---
+name: pulp
+modules:
+- name: puppetlabs-stdlib
+- name: nwops-debug
+- name: puppet-format
