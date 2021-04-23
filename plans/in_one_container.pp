@@ -7,6 +7,7 @@ plan pulp::in_one_container (
   String[1]            $container_name  = lookup('pulp::in_one_container::container_name')|$k|{'pulp'},
   String[1]            $container_image = lookup('pulp::in_one_container::container_image')|$k|{'pulp/pulp'},
   Stdlib::Port         $container_port  = lookup('pulp::in_one_container::container_port')|$k|{8080},
+  Optional[Sensitive[String[1]]] $admin_password  = Sensitive.new(system::env('PULP3_ADMIN_PASSWORD').lest||{'admin'}),
   Optional[Enum[podman,docker]] $runtime = undef,
   # FIXME not set up yet:
   Array[Stdlib::AbsolutePath] $import_paths = lookup('pulp::in_one_container::import_paths')|$k|{
@@ -93,7 +94,17 @@ plan pulp::in_one_container (
       "${container_image}"
     | START_CMD
 
-  $command_result = run_command($start_cmd, $host)
+  $start_result = run_command($start_cmd, $host)
+
+  $admin_reset_cmd = "${runtime_exe} exec -it ${container_name} bash -c 'pulpcore-manager reset-admin-password -p \"\$PULP3_ADMIN_PASSWORD\"'"
+
+  $sleep_time = 10
+  ctrl::sleep($sleep_time)
+  out::message("Waiting ${sleep_time} seconds for pulp to start up...")
   debug::break()
-  return $command_result
+  $reset_result = run_command($admin_reset_cmd, $host, {
+    '_env_vars' => { 'PULP3_ADMIN_PASSWORD' => $admin_password.unwrap },
+  })
+  debug::break()
+  return $start_result
 }
