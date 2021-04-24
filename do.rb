@@ -9,7 +9,7 @@ require 'yaml'
 #    https://www.rubydoc.info/gems/pulpcore_client/PulpcoreClient/Configuration
 #
 PulpcoreClient.configure do |config|
-  config.host = 'http://pulp.server:8080'
+  config.host = 'http://pulp.server:8082'
   config.username = 'admin'
   config.password = 'admin'
   # config.debugging = true
@@ -24,7 +24,7 @@ end
 #    https://www.rubydoc.info/gems/pulp_rpm_client/PulpRpmClient/Configuration
 #
 PulpRpmClient.configure do |config|
-  config.host = 'http://pulp.server:8080'
+  config.host = 'http://pulp.server:8082'
   config.username = 'admin'
   config.password = 'admin'
   config.debugging = ENV['DEBUG'].to_s.match?(/yes|true|1/i)
@@ -229,17 +229,6 @@ def pry_rpm_repo_mirror(name, remote_url)
     policy: 'on_demand',
     tls_validation: false
   )
-  #rpm_rpm_publication = PulpRpmClient::RpmRpmPublication.new(
-  # repository_version: repo_version_data.pulp_href,
-  # metadata_checksum_type: 'sha256',
-  # gpgcheck: 1,
-  # repo_gpgcheck: 1,
-  #)
-  #rpm_rpm_distribution = PulpRpmClient::RpmRpmDistribution.new(
-  #  name: name,
-  #  base_path: name,
-  #  publication: pub_href,
-  #)
 
   begin
     require 'pry'; binding.pry
@@ -253,6 +242,7 @@ repos_to_mirror = {
  #'iso_appstream' => 'file:///run/ISOs/unpacked/CentOS-8.3.2011-x86_64-dvd1/AppStream/',
  'pulp-baseos' => 'http://mirror.centos.org/centos/8/BaseOS/x86_64/os/',
  'pulp-appstream' => 'http://mirror.centos.org/centos/8/AppStream/x86_64/os/',
+ 'pulp-epel' => 'https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/',
  'pulp-epel-modular'  => 'https://dl.fedoraproject.org/pub/epel/8/Modular/x86_64/',
 }
 

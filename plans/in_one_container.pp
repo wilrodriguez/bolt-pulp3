@@ -101,10 +101,14 @@ plan pulp::in_one_container (
   $sleep_time = 10
   ctrl::sleep($sleep_time)
   out::message("Waiting ${sleep_time} seconds for pulp to start up...")
-  debug::break()
-  $reset_result = run_command($admin_reset_cmd, $host, {
-    '_env_vars' => { 'PULP3_ADMIN_PASSWORD' => $admin_password.unwrap },
-  })
-  debug::break()
-  return $start_result
+
+  $apply_result = run_plan(
+    'pulp::in_one_container::reset_admin_password',
+    {
+      'targets'        => $host,
+      'container_name' => $container_name,
+      'runtime'        => $runtime_exe,
+    }
+  )
+
 }
