@@ -13,3 +13,6 @@ gem 'pry', '~> 0.13'
 gem 'pry-remote'
 gem 'terminal-table', '~> 1.8'
 # gem 'facter', '~> 4.0'
+#
+gem 'pulpcore_client'
+gem 'pulp_rpm_client'
