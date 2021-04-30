@@ -28,7 +28,7 @@ plan pulp::in_one_container::apply_local_filesystem (
     }
 
     # See https://pulpproject.org/pulp-in-one-container/#docker-on-centos-7
-    if $apply_el7_docker_fixes {
+    #if $apply_el7_docker_fixes {
       file{[
         'run/postgresql',
         'run/pulpcore-resource-manager',
@@ -39,7 +39,7 @@ plan pulp::in_one_container::apply_local_filesystem (
       }
 
       File["${container_root}/run/postgresql"]{ mode => 'a+w' }
-    }
+    #}
 
     File["${container_root}/pgsql"]{ mode => 'a+w' }
 
