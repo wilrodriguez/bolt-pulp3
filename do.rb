@@ -260,7 +260,7 @@ def get_rpm_repo_mirror_distro(name, url)
 end
 
 
-def create_rpm_copy_dest_repo_from(distro)
+def create_rpm_copy_dest_repo_from(distros)
   repos_api         = PulpRpmClient::RepositoriesRpmApi.new
   remotes_api       = PulpRpmClient::RemotesRpmApi.new
   repo_versions_api = PulpRpmClient::RepositoriesRpmVersionsApi.new
@@ -269,6 +269,7 @@ def create_rpm_copy_dest_repo_from(distro)
   async_responses = []
 
   begin
+
 require 'pry'; binding.pry
 
 
@@ -312,11 +313,56 @@ end
 
 repos_to_mirror = {
  # ISO
- 'pulp-baseos' => 'http://mirror.centos.org/centos/8/BaseOS/x86_64/os/',
- 'pulp-appstream' => 'http://mirror.centos.org/centos/8/AppStream/x86_64/os/',
+ 'pulp-baseos' => {
+   url: 'http://mirror.centos.org/centos/8/BaseOS/x86_64/os/',
+   rpms: [
+     'NetworkManager', # depends on baseos: NetworkManager-libnm, libndp
+   ],
+ },
+ 'pulp-appstream' => {
+   url: 'http://mirror.centos.org/centos/8/AppStream/x86_64/os/',
+   rpms: [
+     '389-ds-base', # depends on lots of things from baseos: cracklib-dicts,selinux-policy +
+   ],
+ },
  # EPEL
- 'pulp-epel' => 'https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/',
- 'pulp-epel-modular'  => 'https://dl.fedoraproject.org/pub/epel/8/Modular/x86_64/',
+ 'pulp-epel' => {
+   url: 'https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/',
+   rpms: [
+     'htop',        # no deps
+     'vim-ansible', # depends on appstream: vim-filesystem
+   ],
+ },
+ 'pulp-epel-modular'  => {
+   url:'https://dl.fedoraproject.org/pub/epel/8/Modular/x86_64/',
+   rpms: [
+
+     '389-ds-base-legacy-tools', # depends on:
+                                 #    baseos:       crypto-policies-scripts, libevent, perl-libs, +
+                                 #    appstream:    python3-bind, nss, bind-libs, perl-Mozilla-LDAP +
+                                 #  @ epel-modular: 389-ds-base-libs
+                                 #
+                                 # modularity info
+                                 #    - only exists in 389-directory-server:stable (epel-modular)
+                                 #
+
+     '389-ds-base',              # depends on:
+                                 #    baseos:       crypto-policies-scripts, libevent, perl-libs, +
+                                 #    appstream:    python3-bind, nss, bind-libs, perl-Mozilla-LDAP +
+                                 #  @ epel-modular: 389-ds-base-libs
+                                 #
+                                 # modularity info
+                                 #  provided by:
+                                 #    - 389-directory-server:stable (epel-modular)
+                                 #    - 389-directory-server:stable (epel-modular)
+                                 #    - 389-directory-server:stable (epel-modular)
+                                 #    - 389-directory-server:stable (epel-modular)
+                                 #
+                                 #  depends on modules (:stable):
+                                 #    perl:5.26, perl-IO-Socket-SSL:2.066, perl-libwww-perl:6.34
+
+   ],
+ },
 }
 
 mirror_distros = {}
@@ -327,13 +373,24 @@ mirror_distros = {}
 CREATE_NEW, USE_EXISTING = 1 , 2
 action = USE_EXISTING
 if action == CREATE_NEW
-  repos_to_mirror.each { |name, url| delete_rpm_repo_mirror(name, url) }
-  repos_to_mirror.each { |name, url| mirror_distros[name] = create_rpm_repo_mirror(name, url) }
+  repos_to_mirror.each { |name, data| delete_rpm_repo_mirror(name, data[:url]) }
+  repos_to_mirror.each { |name, data| mirror_distros[name] = create_rpm_repo_mirror(name, data[:url]) }
   mirror_distros.each{ |name, distro| create_rpm_copy_dest_repo_from(distro) }
 elsif action == USE_EXISTING
 
-  repos_to_mirror.each { |name, url| mirror_distros[name] = get_rpm_repo_mirror_distro(name, url) }
-  mirror_distros.each{ |name, distro| create_rpm_copy_dest_repo_from(distros) }
+  repos_to_mirror.each { |name, data| mirror_distros[name] = get_rpm_repo_mirror_distro(name, data[:url]) }
+  create_rpm_copy_dest_repo_from(mirror_distros)
+  # get source repo_vers_href
+  # get dest repo_vers_href
+  # get content for each repo
+  #
+  # For each mirror:
+  #   get source repo_version_href
+  #   get dest repo_version_href
+  #   get rpms for this mirror
+  #
+  # POST /pulp/api/v3/rpm/copy/
+  #
 
 end
 
