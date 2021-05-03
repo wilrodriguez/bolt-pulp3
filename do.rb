@@ -4,7 +4,8 @@ require 'pulp_rpm_client'
 
 require 'yaml'
 
-PULP_HOST='http://pulp.server:8082'
+###PULP_HOST='http://pulp.server:8082'
+PULP_HOST='http://localhost:8080'
 
 # For all options, see:
 #
@@ -260,7 +261,7 @@ def get_rpm_repo_mirror_distro(name, url)
 end
 
 
-def create_rpm_copy_dest_repo_from(distros)
+def create_rpm_copy_dest_repo_from(repos_to_mirror, mirror_distros)
   repos_api         = PulpRpmClient::RepositoriesRpmApi.new
   remotes_api       = PulpRpmClient::RemotesRpmApi.new
   repo_versions_api = PulpRpmClient::RepositoriesRpmVersionsApi.new
@@ -372,14 +373,15 @@ mirror_distros = {}
 
 CREATE_NEW, USE_EXISTING = 1 , 2
 action = USE_EXISTING
+action = CREATE_NEW if (ARGV.first == 'create' || ARGV.first == 'recreate')
 if action == CREATE_NEW
   repos_to_mirror.each { |name, data| delete_rpm_repo_mirror(name, data[:url]) }
   repos_to_mirror.each { |name, data| mirror_distros[name] = create_rpm_repo_mirror(name, data[:url]) }
-  mirror_distros.each{ |name, distro| create_rpm_copy_dest_repo_from(distro) }
+  create_rpm_copy_dest_repo_from(repos_to_mirror, mirror_distros)
 elsif action == USE_EXISTING
 
   repos_to_mirror.each { |name, data| mirror_distros[name] = get_rpm_repo_mirror_distro(name, data[:url]) }
-  create_rpm_copy_dest_repo_from(mirror_distros)
+  create_rpm_copy_dest_repo_from(repos_to_mirror, mirror_distros)
   # get source repo_vers_href
   # get dest repo_vers_href
   # get content for each repo
