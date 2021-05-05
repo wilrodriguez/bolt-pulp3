@@ -1,9 +1,9 @@
 # @summary Manage a Pulp-in-one-container
 # @param targets A single target to run on (the container host)
 # @private true
-plan pulp::in_one_container::get_host (
+plan pulp3::in_one_container::get_host (
   TargetSpec           $targets         = "localhost",
-  String[1]            $container_name  = lookup('pulp::in_one_container::container_name')|$k|{'pulp'},
+  String[1]            $container_name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
   Optional[Enum[podman,docker]] $runtime = undef,
 ) {
   $host = get_target($targets)
@@ -15,7 +15,7 @@ plan pulp::in_one_container::get_host (
   )
 
   $runtime_exe = run_plan(
-    'pulp::in_one_container::validate_container_exe',
+    'pulp3::in_one_container::validate_container_exe',
     {
       'host'                   => $host,
       'apply_el7_docker_fixes' => $apply_el7_docker_fixes,

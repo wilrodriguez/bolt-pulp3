@@ -3,7 +3,7 @@
 # @private true
 #
 # Details at https://pulpproject.org/pulp-in-one-container/
-plan pulp::in_one_container::apply_local_filesystem (
+plan pulp3::in_one_container::apply_local_filesystem (
   TargetSpec $host,
   Stdlib::AbsolutePath $container_root,
   Stdlib::Port $container_port,

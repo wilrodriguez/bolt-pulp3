@@ -3,7 +3,7 @@
 # @private true
 #
 # Details at https://pulpproject.org/pulp-in-one-container/
-plan pulp::in_one_container::validate_container_exe(
+plan pulp3::in_one_container::validate_container_exe(
   TargetSpec $host = 'localhost',
   Boolean $apply_el7_docker_fixes,
   Optional[Enum[podman,docker]] $runtime = undef,

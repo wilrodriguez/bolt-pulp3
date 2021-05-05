@@ -1,5 +1,5 @@
 ---
-name: pulp
+name: pulp3
 modules:
 - name: puppetlabs-stdlib
 - name: nwops-debug

@@ -1,12 +1,12 @@
 # @summary Destroy a Pulp-in-one-container
 # @param targets A single target to run on (the container host)
-plan pulp::in_one_container::destroy (
+plan pulp3::in_one_container::destroy (
   TargetSpec           $targets         = "localhost",
   String[1]            $user            = system::env('USER'),
   Stdlib::AbsolutePath $container_root  = system::env('PWD'),
-  String[1]            $container_name  = lookup('pulp::in_one_container::container_name')|$k|{'pulp'},
-  String[1]            $container_image = lookup('pulp::in_one_container::container_image')|$k|{'pulp/pulp'},
-  Stdlib::Port         $container_port  = lookup('pulp::in_one_container::container_port')|$k|{8080},
+  String[1]            $container_name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
+  String[1]            $container_image = lookup('pulp3::in_one_container::container_image')|$k|{'pulp/pulp'},
+  Stdlib::Port         $container_port  = lookup('pulp3::in_one_container::container_port')|$k|{8080},
   Optional[Enum[podman,docker]] $runtime = undef,
   Boolean $force = false,
 ) {
@@ -19,7 +19,7 @@ plan pulp::in_one_container::destroy (
   )
 
   $runtime_exe = run_plan(
-    'pulp::in_one_container::validate_container_exe',
+    'pulp3::in_one_container::validate_container_exe',
     {
       'host'                   => $host,
       'apply_el7_docker_fixes' => $apply_el7_docker_fixes,

@@ -3,11 +3,11 @@
 # @private true
 #
 # Details at https://pulpproject.org/pulp-in-one-container/
-plan pulp::in_one_container::match_container(
+plan pulp3::in_one_container::match_container(
   TargetSpec $host,
   Boolean    $all = false,
-  String[1]  $name  = lookup('pulp::in_one_container::container_name')|$k|{'pulp'},
-  String[1]  $image = lookup('pulp::in_one_container::container_image')|$k|{'pulp/pulp'},
+  String[1]  $name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
+  String[1]  $image = lookup('pulp3::in_one_container::container_image')|$k|{'pulp/pulp'},
 ) {
   $extra_args  = $all ? { true => '-a', default => '' }
   $runtime_exe = $host.facts['pioc_runtime_exe']

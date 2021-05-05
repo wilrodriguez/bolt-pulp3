@@ -6,10 +6,10 @@
 # summary and parameters from the plan.
 # @summary A plan created with bolt plan new.
 # @param targets The targets to run on.
-plan pulp::rpm::miror (
+plan pulp3::rpm::miror (
   TargetSpec $targets = "localhost"
 ) {
-  out::message("Hello from pulp::rpm::miror")
+  out::message("Hello from pulp3::rpm::miror")
   $command_result = run_command('whoami', $targets)
   return $command_result
 }
