@@ -5,7 +5,7 @@ require 'pulp_rpm_client'
 require 'yaml'
 
 ###PULP_HOST='http://pulp.server:8082'
-PULP_HOST='http://localhost:8080'
+PULP_HOST="http://localhost:#{ENV['PULP_PORT'] || 8080}"
 
 # For all options, see:
 #
@@ -141,8 +141,6 @@ def create_rpm_repo_mirror(name, remote_url)
     distribution_data = distributions_api.list({base_path: name})
     return( distribution_data )
 
-  ###  require 'pry'; binding.pry
-
   rescue PulpcoreClient::ApiError, PulpRpmClient::ApiError => e
     puts "Exception when calling API: #{e}"
       warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
@@ -250,7 +248,7 @@ def delete_rpm_repo_mirror(name, remote_url)
   end
 end
 
-def get_rpm_repo_mirror_distro(name, url)
+def get_rpm_repo_from_distro(name, url)
   distributions_api = PulpRpmClient::DistributionsRpmApi.new
 
   distributions_list = distributions_api.list(name: name)
@@ -260,19 +258,59 @@ def get_rpm_repo_mirror_distro(name, url)
   raise "Could not find distribution '#{name}'"
 end
 
+def get_repo_version_from_distro(distro)
+  repo_versions_api   = PulpRpmClient::RepositoriesRpmVersionsApi.new
+  publications_api    = PulpRpmClient::PublicationsRpmApi.new
+  distributions_api   = PulpRpmClient::DistributionsRpmApi.new
+
+  distributions_list = distributions_api.list(name: distro.name)
+  raise unless distributions_list.count == 1
+
+  publication_href = distributions_list.results.first.publication
+  raise unless publication_href
+
+  publication = publications_api.read(publication_href)
+  repo_versions = repo_versions_api.read( publication.repository_version )
+  repo_versions
+end
+
+def get_rpm_hrefs(repo_version,rpms)
+  content_package_api = PulpRpmClient::ContentPackagesApi.new
+
+  paginated_package_response_list = content_package_api.list({:name__in => rpms, :repository_version => repo_version.pulp_href })
+  # FIXME TODO follow pagination, if necessary (ugh)
+  # FIXME TODO check that all rpms were returned
+  rpm_hrefs = paginated_package_response_list.results.map{|x| x.pulp_href }
+  rpm_hrefs
+end
 
 def create_rpm_copy_dest_repo_from(repos_to_mirror, mirror_distros)
-  repos_api         = PulpRpmClient::RepositoriesRpmApi.new
-  remotes_api       = PulpRpmClient::RemotesRpmApi.new
-  repo_versions_api = PulpRpmClient::RepositoriesRpmVersionsApi.new
-  publications_api  = PulpRpmClient::PublicationsRpmApi.new
-  distributions_api = PulpRpmClient::DistributionsRpmApi.new
+  rpm_copy_api      = PulpRpmClient::RpmCopyApi.new
   async_responses = []
 
   begin
+    config = []
+
+    repos_to_mirror.each do |name, data|
+      mirror_distro = mirror_distros[name] || raise("Can't find distro named '#{name}'")
+      repo_version = get_repo_version_from_distro(mirror_distro)
+      rpm_hrefs = get_rpm_hrefs(repo_version, data[:rpms])
+      # TODO: (idempotently?) create dest_repo
+      config << {
+        'source_repo_version' => repo_version.pulp_href,
+        'dest_repo'           => TODO_DEST_REPO,
+        'content'             => rpm_hrefs,
+      }
+require 'pry'; binding.pry
+    end
+
+    PulpRpmClient::Copy.new({
+      config: [
+      ],
+      dependency_solving: true,
+    })
 
 require 'pry'; binding.pry
-
 
     # Wait for all tasks to complete
     async_responses.each do |async_info|
@@ -380,8 +418,14 @@ if action == CREATE_NEW
   create_rpm_copy_dest_repo_from(repos_to_mirror, mirror_distros)
 elsif action == USE_EXISTING
 
-  repos_to_mirror.each { |name, data| mirror_distros[name] = get_rpm_repo_mirror_distro(name, data[:url]) }
-  create_rpm_copy_dest_repo_from(repos_to_mirror, mirror_distros)
+  repos_to_mirror.each do |name, data|
+    # TODO label repo_versions and grab them directly
+    mirror_distro = get_rpm_repo_from_distro(name, data[:url])
+    repos_to_mirror[name][:source_repo_version_href] = get_repo_version_from_distro(mirror_distro).pulp_href
+    # TODO get source repo href
+require 'pry'; binding.pry
+  end
+  create_rpm_copy_dest_repo_from(repos_to_mirror)
   # get source repo_vers_href
   # get dest repo_vers_href
   # get content for each repo
