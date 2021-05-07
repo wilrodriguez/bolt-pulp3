@@ -8,6 +8,7 @@ plan pulp3::in_one_container (
   String[1]            $container_image  = lookup('pulp3::in_one_container::container_image')|$k|{'pulp/pulp'},
   Stdlib::Port         $container_port   = lookup('pulp3::in_one_container::container_port')|$k|{8080},
   Integer[0]           $startup_sleep_time = 10,
+  Boolean              $skip_filesystem  = false,
   Optional[Sensitive[String[1]]] $admin_password = Sensitive.new(system::env('PULP3_ADMIN_PASSWORD').lest||{'admin'}),
   Optional[Enum[podman,docker]] $runtime = undef,
   # FIXME not set up yet:
@@ -49,15 +50,18 @@ plan pulp3::in_one_container (
   }
 
   out::message( "Starting new container '${container_name}' from image '${container_image}'..." )
-  $apply_result = run_plan(
-    'pulp3::in_one_container::apply_local_filesystem',
-    {
-      'host'           => $host,
-      'container_root' => $container_root,
-      'container_port' => $container_port,
-      'import_paths'   => $import_paths,
-    }
-  )
+
+  unless $skip_filesystem {
+    $apply_result = run_plan(
+      'pulp3::in_one_container::apply_local_filesystem',
+      {
+        'host'           => $host,
+        'container_root' => $container_root,
+        'container_port' => $container_port,
+        'import_paths'   => $import_paths,
+      }
+    )
+  }
 
   $selinux_suffix = $host.facts['selinux_enforced'] ? {
     true    => ':Z',
@@ -67,6 +71,7 @@ plan pulp3::in_one_container (
     ${runtime_exe} run --detach \
       --name "${container_name}" \
       --publish "${container_port}:80" \
+      --publish-all \
       --log-driver journald \
       --device /dev/fuse \
       --volume "${container_root}/settings:/etc/pulp${selinux_suffix}" \
@@ -74,6 +79,7 @@ plan pulp3::in_one_container (
       --volume "${container_root}/pgsql:/var/lib/pgsql${selinux_suffix}" \
       --volume "${container_root}/containers:/var/lib/containers${selinux_suffix}" \
       --volume "${container_root}/run:/run${selinux_suffix}" \
+      --network pulpnet \
       "${container_image}"
     | START_CMD
 
