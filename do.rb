@@ -33,32 +33,35 @@ PulpRpmClient.configure do |config|
   config.debugging = ENV['DEBUG'].to_s.match?(/yes|true|1/i)
 end
 
-
+REPOS_API           = PulpRpmClient::RepositoriesRpmApi.new
+REMOTES_API         = PulpRpmClient::RemotesRpmApi.new
+REPO_VERSIONS_API   = PulpRpmClient::RepositoriesRpmVersionsApi.new
+PUBLICATIONS_API    = PulpRpmClient::PublicationsRpmApi.new
+DISTRIBUTIONS_API   = PulpRpmClient::DistributionsRpmApi.new
+TASKS_API           = PulpcoreClient::TasksApi.new
+CONTENT_PACKAGE_API = PulpRpmClient::ContentPackagesApi.new
+RPM_COPY_API        = PulpRpmClient::RpmCopyApi.new
 
 def wait_for_task_to_complete( task, opts={} )
   opts = { sleep_time: 10 }.merge(opts)
-  tasks_api = PulpcoreClient::TasksApi.new
 
   # Wait for sync task to complete
-  while !['completed','failed'].any?{ |state| tasks_api.read(task).state == state }
-    task_info = tasks_api.read(task)
+  while !['completed','failed'].any?{ |state| TASKS_API.read(task).state == state }
+    task_info = TASKS_API.read(task)
     puts "#{Time.now} ...Waiting for task '#{task_info.name}' to complete (status: '#{task_info.state})'"
     warn "      ( pulp_href: #{task_info.pulp_href} )"
-  ###        require 'pry'; binding.pry; opts[:sleep_time] = 0
     sleep opts[:sleep_time]
   end
-
-  tasks_api
 end
 
 
 def wait_for_create_task_to_complete( task, opts={} )
   opts = { min_expected_resources: 1, max_expected_resources: 1 }.merge(opts)
-  tasks_api = wait_for_task_to_complete( task, opts )
+  wait_for_task_to_complete( task, opts )
 
   created_resources = nil
   begin
-    created_resources = tasks_api.read(task).created_resources
+    created_resources = TASKS_API.read(task).created_resources
   rescue NameError => e
     warn e
     warn e.backtrace
@@ -80,54 +83,77 @@ def wait_for_create_task_to_complete( task, opts={} )
 end
 
 
-def create_rpm_repo_mirror(name, remote_url)
-  repos_api         = PulpRpmClient::RepositoriesRpmApi.new
-  remotes_api       = PulpRpmClient::RemotesRpmApi.new
-  repo_versions_api = PulpRpmClient::RepositoriesRpmVersionsApi.new
-  publications_api  = PulpRpmClient::PublicationsRpmApi.new
-  distributions_api = PulpRpmClient::DistributionsRpmApi.new
+def idempotently_create_rpm_repo(name, labels={}, opts={})
+  repos_data = nil
+  repos_list = REPOS_API.list(name: name)
+  if repos_list.count > 0
+    warn "WARNING: repo '#{name}' already exists!"
+    repos_data = repos_list.results[0]
+  else
+    rpm_rpm_repository = PulpRpmClient::RpmRpmRepository.new(name: name, pulp_labels: labels)
+    repos_data = REPOS_API.create(rpm_rpm_repository, opts)
+  end
+  puts repos_data.to_hash.to_yaml
+  repos_data
+end
 
-  opts={}
+def create_rpm_repo_mirror(name, remote_url, labels={})
+  # create remote
+  rpm_rpm_remote = PulpRpmClient::RpmRpmRemote.new(
+    name: name,
+    url: remote_url,
+    policy: 'on_demand', #policy: 'immediate',
+    tls_validation: false
+  )
+
+  remotes_data = REMOTES_API.create(rpm_rpm_remote, opts)
+
+  # Set up sync
+  # https://www.rubydoc.info/gems/pulp_rpm_client/PulpRpmClient/RpmRepositorySyncURL
+  rpm_repository_sync_url = PulpRpmClient::RpmRepositorySyncURL.new(
+    remote: remotes_data.pulp_href,
+    mirror: true,
+  )
+  sync_async_info = REPOS_API.sync( repos_data.pulp_href, rpm_repository_sync_url )
+
+  created_resources = wait_for_create_task_to_complete( sync_async_info.task )
+  created_resources.first
+end
+
+
+def idempotently_create_rpm_publication(rpm_rpm_repository_version_href, labels={})
   result = nil
   begin
-    # create repo
-    rpm_rpm_repository = PulpRpmClient::RpmRpmRepository.new(name: name)
-    repos_data = repos_api.create(rpm_rpm_repository, opts)
-    puts repos_data.to_hash.to_yaml
-
-    # create remote
-    rpm_rpm_remote = PulpRpmClient::RpmRpmRemote.new(
-      name: name,
-      url: remote_url,
-      policy: 'on_demand',
-      #policy: 'immediate',
-      tls_validation: false
-    )
-
-    remotes_data = remotes_api.create(rpm_rpm_remote, opts)
-
-    # Set up sync
-    # https://www.rubydoc.info/gems/pulp_rpm_client/PulpRpmClient/RpmRepositorySyncURL
-    rpm_repository_sync_url = PulpRpmClient::RpmRepositorySyncURL.new(
-      remote: remotes_data.pulp_href,
-      mirror: true,
-    )
-    sync_async_info = repos_api.sync( repos_data.pulp_href, rpm_repository_sync_url )
-
-    created_resources = wait_for_create_task_to_complete( sync_async_info.task )
-    rpm_rpm_repository_version_href = created_resources.first
-
-    # get Repository Version
-    repo_version_data = repo_versions_api.read(rpm_rpm_repository_version_href)
-
+    list = PUBLICATIONS_API.list(repository_version: rpm_rpm_repository_version_href)
+    if list.count > 0
+      warn "WARNING: publication for '#{rpm_rpm_repository_version_href}' already exists!"
+      return list.results.first
+    end
     # Create Publication
     rpm_rpm_publication = PulpRpmClient::RpmRpmPublication.new(
-     repository_version: repo_version_data.pulp_href,
+     repository_version: rpm_rpm_repository_version_href,
      metadata_checksum_type: 'sha256',
     )
-    pub_sync_info = publications_api.create(rpm_rpm_publication, opts)
+    pub_sync_info = PUBLICATIONS_API.create(rpm_rpm_publication)
     pub_created_resources = wait_for_create_task_to_complete( pub_sync_info.task )
-    pub_href = pub_created_resources.first
+    result = pub_created_resources.first
+  rescue PulpcoreClient::ApiError, PulpRpmClient::ApiError => e
+    puts "Exception when calling API: #{e}"
+      warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
+    require 'pry'; binding.pry
+  end
+  result
+end
+
+
+def idempotently_create_rpm_distro(name, pub_href, labels={})
+  result = nil
+  begin
+    list = DISTRIBUTIONS_API.list(name: name)
+    if list.count > 0
+      warn "WARNING: distro '#{name}' already exists!"
+      return list.results.first
+    end
 
     # Create Distribution
     rpm_rpm_distribution = PulpRpmClient::RpmRpmDistribution.new(
@@ -135,31 +161,32 @@ def create_rpm_repo_mirror(name, remote_url)
       base_path: name,
       publication: pub_href,
     )
-    dist_sync_info = distributions_api.create(rpm_rpm_distribution)
+    dist_sync_info = DISTRIBUTIONS_API.create(rpm_rpm_distribution)
     dist_created_resources = wait_for_create_task_to_complete( dist_sync_info.task )
     dist_href = dist_created_resources.first
-    distribution_data = distributions_api.list({base_path: name})
-    return( distribution_data )
+    distribution_data = DISTRIBUTIONS_API.list({base_path: name})
+    return( distribution_data.results.first )
 
   rescue PulpcoreClient::ApiError, PulpRpmClient::ApiError => e
     puts "Exception when calling API: #{e}"
       warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
     require 'pry'; binding.pry
   end
+  puts result.to_hash.to_yaml
+  result
 end
 
 
 
 def delete_rpm_repo(name)
-  repos_api = PulpRpmClient::RepositoriesRpmApi.new
   async_responses = []
-  repos_list = repos_api.list(name: name)
+  repos_list = REPOS_API.list(name: name)
   if repos_list.count > 0
     repos_list.results.each do |repo_data|
       warn "!! DELETING repo #{repo_data.name}: #{repo_data.pulp_href}"
-      async_response_data = repos_api.delete(repo_data.pulp_href)
+      async_response_data = REPOS_API.delete(repo_data.pulp_href)
       async_responses << async_response_data if async_response_data
-      #repo_versions_api.delete(repo_data.versions_href) unless repo_data.versions_href.empty?
+      #REPO_VERSIONS_API.delete(repo_data.versions_href) unless repo_data.versions_href.empty?
     end
   end
   async_responses
@@ -182,23 +209,21 @@ def delete_rpm_remote(name)
 end
 
 def delete_rpm_publication(name)
-  distributions_api = PulpRpmClient::DistributionsRpmApi.new
-  publications_api  = PulpRpmClient::PublicationsRpmApi.new
   publication_href = nil
   async_responses = []
 
-  distributions_list = distributions_api.list(name: name)
+  distributions_list = DISTRIBUTIONS_API.list(name: name)
   return [] unless  distributions_list.count > 0
 
   publication_href = distributions_list.results.first.publication
   return [] unless publication_href
 
-  publications_list = publications_api.list(name: name)
+  publications_list = PUBLICATIONS_API.list(name: name)
   return [] unless  publications_list.count > 0
 
   publications_list.results.each do |publication_data|
     warn "!! DELETING publication: (#{name}) #{publication_data.pulp_href}"
-    async_response_data = publications_api.delete(publication_href)
+    async_response_data = PUBLICATIONS_API.delete(publication_href)
     async_responses << async_response_data if async_response_data
   end
 
@@ -206,16 +231,15 @@ def delete_rpm_publication(name)
 end
 
 def delete_rpm_distribution(name)
-  distributions_api = PulpRpmClient::DistributionsRpmApi.new
   async_responses = []
 
   # delete distribution
-  distributions_list = distributions_api.list(name: name)
+  distributions_list = DISTRIBUTIONS_API.list(name: name)
 
   if distributions_list.count > 0
     distributions_list.results.each do |distribution_data|
       warn "!! DELETING distribution #{distribution_data.name}: #{distribution_data.pulp_href}"
-      async_response_data = distributions_api.delete(distribution_data.pulp_href)
+      async_response_data = DISTRIBUTIONS_API.delete(distribution_data.pulp_href)
       async_responses << async_response_data if async_response_data
     end
   end
@@ -248,78 +272,52 @@ def delete_rpm_repo_mirror(name, remote_url)
   end
 end
 
-def get_rpm_repo_from_distro(name, url)
-  distributions_api = PulpRpmClient::DistributionsRpmApi.new
-
-  distributions_list = distributions_api.list(name: name)
+def get_rpm_distro(name)
+  distributions_list = DISTRIBUTIONS_API.list(name: name)
   if distributions_list.count > 0
     return distributions_list.results.first
   end
   raise "Could not find distribution '#{name}'"
 end
 
-def get_repo_version_from_distro(distro)
-  repo_versions_api   = PulpRpmClient::RepositoriesRpmVersionsApi.new
-  publications_api    = PulpRpmClient::PublicationsRpmApi.new
-  distributions_api   = PulpRpmClient::DistributionsRpmApi.new
+def get_repo_version_from_distro(name)
+  distribution = get_rpm_distro(name)
+  publication_href = distribution.publication
+  raise "No publication found for distribution '#{name}'" unless publication_href
 
-  distributions_list = distributions_api.list(name: distro.name)
-  raise unless distributions_list.count == 1
-
-  publication_href = distributions_list.results.first.publication
-  raise unless publication_href
-
-  publication = publications_api.read(publication_href)
-  repo_versions = repo_versions_api.read( publication.repository_version )
+  publication = PUBLICATIONS_API.read(publication_href)
+  repo_versions = REPO_VERSIONS_API.read( publication.repository_version )
   repo_versions
 end
 
-def get_rpm_hrefs(repo_version,rpms)
-  content_package_api = PulpRpmClient::ContentPackagesApi.new
+def get_rpm_hrefs(repo_version_href,rpms)
 
-  paginated_package_response_list = content_package_api.list({:name__in => rpms, :repository_version => repo_version.pulp_href })
+  paginated_package_response_list = CONTENT_PACKAGE_API.list({:name__in => rpms, :repository_version => repo_version_href })
   # FIXME TODO follow pagination, if necessary (ugh)
   # FIXME TODO check that all rpms were returned
   rpm_hrefs = paginated_package_response_list.results.map{|x| x.pulp_href }
   rpm_hrefs
 end
 
-def create_rpm_copy_dest_repo_from(repos_to_mirror, mirror_distros)
-  rpm_copy_api      = PulpRpmClient::RpmCopyApi.new
-  async_responses = []
+def advanced_rpm_copy(repos_to_mirror)
+  config = []
+  repos_to_mirror.each do |name, data|
+    config << {
+      'source_repo_version' => data[:source_repo_version_href],
+      'dest_repo'           => data[:dest_repo_href],
+      'content'             => data[:rpm_hrefs],
+    }
+  end
 
   begin
-    config = []
-
-    repos_to_mirror.each do |name, data|
-      mirror_distro = mirror_distros[name] || raise("Can't find distro named '#{name}'")
-      repo_version = get_repo_version_from_distro(mirror_distro)
-      rpm_hrefs = get_rpm_hrefs(repo_version, data[:rpms])
-      # TODO: (idempotently?) create dest_repo
-      config << {
-        'source_repo_version' => repo_version.pulp_href,
-        'dest_repo'           => TODO_DEST_REPO,
-        'content'             => rpm_hrefs,
-      }
-require 'pry'; binding.pry
-    end
-
-    PulpRpmClient::Copy.new({
-      config: [
-      ],
+    copy = PulpRpmClient::Copy.new({
+      config: config,
       dependency_solving: true,
     })
 
-require 'pry'; binding.pry
-
-    # Wait for all tasks to complete
-    async_responses.each do |async_info|
-      next unless async_info
-      @async_info = async_info
-      wait_for_task_to_complete( async_info.task )
-    end
-require 'pry'; binding.pry
-
+    async_response = RPM_COPY_API.copy_content(copy)
+    wait_for_task_to_complete( async_response.task )
+    return async_response.task
   rescue PulpcoreClient::ApiError => e
     puts "Exception when calling API: #{e}"
     require 'pry'; binding.pry
@@ -327,116 +325,61 @@ require 'pry'; binding.pry
 end
 
 
-#def pry_rpm_repo_mirror(name, remote_url)
-#  repos_api         = PulpRpmClient::RepositoriesRpmApi.new
-#  remotes_api       = PulpRpmClient::RemotesRpmApi.new
-#  repo_versions_api = PulpRpmClient::RepositoriesRpmVersionsApi.new
-#  publications_api  = PulpRpmClient::PublicationsRpmApi.new
-#  distributions_api = PulpRpmClient::DistributionsRpmApi.new
-#
-#  rpm_rpm_repository = PulpRpmClient::RpmRpmRepository.new(name: name)
-#  rpm_rpm_remote = PulpRpmClient::RpmRpmRemote.new(
-#    name: name,
-#    url: remote_url,
-#    policy: 'on_demand',
-#    tls_validation: false
-#  )
-#
-#  begin
-#    require 'pry'; binding.pry
-#  rescue PulpcoreClient::ApiError => e
-#    puts "Exception when calling API: #{e}"
-#    require 'pry'; binding.pry
-#  end
-#end
-
-repos_to_mirror = {
- # ISO
- 'pulp-baseos' => {
-   url: 'http://mirror.centos.org/centos/8/BaseOS/x86_64/os/',
-   rpms: [
-     'NetworkManager', # depends on baseos: NetworkManager-libnm, libndp
-   ],
- },
- 'pulp-appstream' => {
-   url: 'http://mirror.centos.org/centos/8/AppStream/x86_64/os/',
-   rpms: [
-     '389-ds-base', # depends on lots of things from baseos: cracklib-dicts,selinux-policy +
-   ],
- },
- # EPEL
- 'pulp-epel' => {
-   url: 'https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/',
-   rpms: [
-     'htop',        # no deps
-     'vim-ansible', # depends on appstream: vim-filesystem
-   ],
- },
- 'pulp-epel-modular'  => {
-   url:'https://dl.fedoraproject.org/pub/epel/8/Modular/x86_64/',
-   rpms: [
-
-     '389-ds-base-legacy-tools', # depends on:
-                                 #    baseos:       crypto-policies-scripts, libevent, perl-libs, +
-                                 #    appstream:    python3-bind, nss, bind-libs, perl-Mozilla-LDAP +
-                                 #  @ epel-modular: 389-ds-base-libs
-                                 #
-                                 # modularity info
-                                 #    - only exists in 389-directory-server:stable (epel-modular)
-                                 #
-
-     '389-ds-base',              # depends on:
-                                 #    baseos:       crypto-policies-scripts, libevent, perl-libs, +
-                                 #    appstream:    python3-bind, nss, bind-libs, perl-Mozilla-LDAP +
-                                 #  @ epel-modular: 389-ds-base-libs
-                                 #
-                                 # modularity info
-                                 #  provided by:
-                                 #    - 389-directory-server:stable (epel-modular)
-                                 #    - 389-directory-server:stable (epel-modular)
-                                 #    - 389-directory-server:stable (epel-modular)
-                                 #    - 389-directory-server:stable (epel-modular)
-                                 #
-                                 #  depends on modules (:stable):
-                                 #    perl:5.26, perl-IO-Socket-SSL:2.066, perl-libwww-perl:6.34
-
-   ],
- },
-}
+repos_to_mirror_file = 'repos_to_mirror.yaml'
+repos_to_mirror = YAML.load_file(repos_to_mirror_file)
+File.open('_repos_to_mirror.yaml','w'){ |f| f.puts repos_to_mirror.to_yaml }
 
 mirror_distros = {}
-
-#repos_to_mirror.each { |name, url| pry_rpm_repo_mirror(name, url) }
+slim_repos = {}
 
 
 CREATE_NEW, USE_EXISTING = 1 , 2
 action = USE_EXISTING
 action = CREATE_NEW if (ARGV.first == 'create' || ARGV.first == 'recreate')
 if action == CREATE_NEW
+  # TODO use these labels to identify repo purpose for cleanup/creation
+  labels = {
+    'simpbuild' => 'testbuild-1',
+    'reporole'  => 'remote_mirror',
+  }
   repos_to_mirror.each { |name, data| delete_rpm_repo_mirror(name, data[:url]) }
-  repos_to_mirror.each { |name, data| mirror_distros[name] = create_rpm_repo_mirror(name, data[:url]) }
-  create_rpm_copy_dest_repo_from(repos_to_mirror, mirror_distros)
+  repos_to_mirror.each do |name, data|
+    repo = idempotently_create_rpm_repo(name , labels)
+    rpm_rpm_repository_version_href = create_rpm_repo_mirror(name, remote_url, labels={})
+    pub_href = idempotently_create_rpm_publication(rpm_rpm_repository_version_href, labels)
+    mirror_distros[name] = idempotently_create_rpm_distro(name, pub_href)
+  end
+  #  TODO: do everything that's in USE_EXISTING, too
 elsif action == USE_EXISTING
+  labels = {
+    'simpbuild' => 'testbuild-1',
+    'reporole'  => 'slim_mirror',
+  }
 
   repos_to_mirror.each do |name, data|
-    # TODO label repo_versions and grab them directly
-    mirror_distro = get_rpm_repo_from_distro(name, data[:url])
-    repos_to_mirror[name][:source_repo_version_href] = get_repo_version_from_distro(mirror_distro).pulp_href
-    # TODO get source repo href
-require 'pry'; binding.pry
+    repo_version_href = get_repo_version_from_distro(name).pulp_href
+    repos_to_mirror[name][:source_repo_version_href] = repo_version_href
+    repos_to_mirror[name][:rpm_hrefs] = get_rpm_hrefs(repo_version_href, data[:rpms])
+    slim_repo_name = name.sub(/^pulp\b/, 'simpbuild-6.6.0' ) # TODO: use dynamic names/labels
+    repo = idempotently_create_rpm_repo(slim_repo_name, labels)
+    slim_repos[slim_repo_name] ||= {}
+    slim_repos[slim_repo_name][:pulp_href] = repo.pulp_href
+    slim_repos[slim_repo_name][:source_repo_name] = name
+    repos_to_mirror[name][:dest_repo_href] = repo.pulp_href
   end
-  create_rpm_copy_dest_repo_from(repos_to_mirror)
-  # get source repo_vers_href
-  # get dest repo_vers_href
-  # get content for each repo
-  #
-  # For each mirror:
-  #   get source repo_version_href
-  #   get dest repo_version_href
-  #   get rpms for this mirror
-  #
-  # POST /pulp/api/v3/rpm/copy/
-  #
+  copy_task = advanced_rpm_copy(repos_to_mirror)
 
+  slim_repos.each do |name, data|
+    rpm_rpm_repository_version_href = REPOS_API.read(data[:pulp_href]).latest_version_href
+    pub_href = idempotently_create_rpm_publication(rpm_rpm_repository_version_href, labels)
+    distro = idempotently_create_rpm_distro(name, pub_href)
+    slim_repos[name][:distro_href] = distro.pulp_href
+    slim_repos[name][:distro_url] = distro.base_url
+  end
+
+  output_file = '_slim_repos.yaml'
+  puts "Writing slim_repos information to #{output_file}..."
+  File.open(output_file,'w'){ |f| f.puts slim_repos.to_yaml }
+  puts 'FINIS'
 end
 

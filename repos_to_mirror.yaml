@@ -1,0 +1,42 @@
+---
+pulp-baseos:
+  url: http://mirror.centos.org/centos/8/BaseOS/x86_64/os/
+  rpms:
+  - NetworkManager # depends on baseos: NetworkManager-libnm, libndp
+pulp-appstream:
+  url: http://mirror.centos.org/centos/8/AppStream/x86_64/os/
+  rpms:
+  - 389-ds-base # depends on lots of things from baseos: cracklib-dicts,selinux-policy +
+pulp-epel:
+  url: https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
+  rpms:
+  - htop        # no deps
+  - vim-ansible # depends on appstream: vim-filesystem
+pulp-epel-modular:
+  url: https://dl.fedoraproject.org/pub/epel/8/Modular/x86_64/
+  rpms:
+  # depends on:
+  #    baseos:       crypto-policies-scripts, libevent, perl-libs, +
+  #    appstream:    python3-bind, nss, bind-libs, perl-Mozilla-LDAP +
+  #  @ epel-modular: 389-ds-base-libs
+  #
+  # modularity info
+  #    - only exists in 389-directory-server:stable (epel-modular)
+  #
+  - 389-ds-base-legacy-tools
+
+  # depends on:
+  #    baseos:       crypto-policies-scripts, libevent, perl-libs, +
+  #    appstream:    python3-bind, nss, bind-libs, perl-Mozilla-LDAP +
+  #  @ epel-modular: 389-ds-base-libs
+  #
+  # modularity info
+  #  provided by:
+  #    - 389-directory-server:stable (epel-modular)
+  #    - 389-directory-server:stable (epel-modular)
+  #    - 389-directory-server:stable (epel-modular)
+  #    - 389-directory-server:stable (epel-modular)
+  #
+  #  depends on modules (:stable):
+  #    perl:5.26, perl-IO-Socket-SSL:2.066, perl-libwww-perl:6.34
+  - 389-ds-base
