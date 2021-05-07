@@ -325,61 +325,97 @@ def advanced_rpm_copy(repos_to_mirror)
 end
 
 
-repos_to_mirror_file = 'repos_to_mirror.yaml'
-repos_to_mirror = YAML.load_file(repos_to_mirror_file)
-File.open('_repos_to_mirror.yaml','w'){ |f| f.puts repos_to_mirror.to_yaml }
+def do( action, repos_to_mirror_file )
+  repos_to_mirror = YAML.load_file(repos_to_mirror_file)
 
-mirror_distros = {}
-slim_repos = {}
+  mirror_distros = {}
+  slim_repos = {}
 
+  if action == :create_new
+    # TODO use these labels to identify repo purpose for cleanup/creation
+    labels = {
+      'simpbuild' => 'testbuild-1',
+      'reporole'  => 'remote_mirror',
+    }
+    repos_to_mirror.each { |name, data| delete_rpm_repo_mirror(name, data[:url]) }
+    repos_to_mirror.each do |name, data|
+      repo = idempotently_create_rpm_repo(name , labels)
+      rpm_rpm_repository_version_href = create_rpm_repo_mirror(name, remote_url, labels={})
+      pub_href = idempotently_create_rpm_publication(rpm_rpm_repository_version_href, labels)
+      mirror_distros[name] = idempotently_create_rpm_distro(name, pub_href)
+    end
+    #  TODO: do everything that's in USE_EXISTING, too
+  elsif action == :use_existing
+    labels = {
+      'simpbuild' => 'testbuild-1',
+      'reporole'  => 'slim_mirror',
+    }
 
-CREATE_NEW, USE_EXISTING = 1 , 2
-action = USE_EXISTING
-action = CREATE_NEW if (ARGV.first == 'create' || ARGV.first == 'recreate')
-if action == CREATE_NEW
-  # TODO use these labels to identify repo purpose for cleanup/creation
-  labels = {
-    'simpbuild' => 'testbuild-1',
-    'reporole'  => 'remote_mirror',
-  }
-  repos_to_mirror.each { |name, data| delete_rpm_repo_mirror(name, data[:url]) }
-  repos_to_mirror.each do |name, data|
-    repo = idempotently_create_rpm_repo(name , labels)
-    rpm_rpm_repository_version_href = create_rpm_repo_mirror(name, remote_url, labels={})
-    pub_href = idempotently_create_rpm_publication(rpm_rpm_repository_version_href, labels)
-    mirror_distros[name] = idempotently_create_rpm_distro(name, pub_href)
+    repos_to_mirror.each do |name, data|
+      repo_version_href = get_repo_version_from_distro(name).pulp_href
+      repos_to_mirror[name][:source_repo_version_href] = repo_version_href
+      repos_to_mirror[name][:rpm_hrefs] = get_rpm_hrefs(repo_version_href, data[:rpms])
+      slim_repo_name = name.sub(/^pulp\b/, 'simpbuild-6.6.0' ) # TODO: use dynamic names/labels
+      repo = idempotently_create_rpm_repo(slim_repo_name, labels)
+      slim_repos[slim_repo_name] ||= {}
+      slim_repos[slim_repo_name][:pulp_href] = repo.pulp_href
+      slim_repos[slim_repo_name][:source_repo_name] = name
+      repos_to_mirror[name][:dest_repo_href] = repo.pulp_href
+    end
+    copy_task = advanced_rpm_copy(repos_to_mirror)
+
+    slim_repos.each do |name, data|
+      rpm_rpm_repository_version_href = REPOS_API.read(data[:pulp_href]).latest_version_href
+      pub_href = idempotently_create_rpm_publication(rpm_rpm_repository_version_href, labels)
+      distro = idempotently_create_rpm_distro(name, pub_href)
+      slim_repos[name][:distro_href] = distro.pulp_href
+      slim_repos[name][:distro_url] = distro.base_url
+    end
+
+    output_file = '_slim_repos.yaml'
+    puts "Writing slim_repos information to #{output_file}..."
+    File.open(output_file,'w'){ |f| f.puts slim_repos.to_yaml }
+    puts 'FINIS'
   end
-  #  TODO: do everything that's in USE_EXISTING, too
-elsif action == USE_EXISTING
-  labels = {
-    'simpbuild' => 'testbuild-1',
-    'reporole'  => 'slim_mirror',
-  }
-
-  repos_to_mirror.each do |name, data|
-    repo_version_href = get_repo_version_from_distro(name).pulp_href
-    repos_to_mirror[name][:source_repo_version_href] = repo_version_href
-    repos_to_mirror[name][:rpm_hrefs] = get_rpm_hrefs(repo_version_href, data[:rpms])
-    slim_repo_name = name.sub(/^pulp\b/, 'simpbuild-6.6.0' ) # TODO: use dynamic names/labels
-    repo = idempotently_create_rpm_repo(slim_repo_name, labels)
-    slim_repos[slim_repo_name] ||= {}
-    slim_repos[slim_repo_name][:pulp_href] = repo.pulp_href
-    slim_repos[slim_repo_name][:source_repo_name] = name
-    repos_to_mirror[name][:dest_repo_href] = repo.pulp_href
-  end
-  copy_task = advanced_rpm_copy(repos_to_mirror)
-
-  slim_repos.each do |name, data|
-    rpm_rpm_repository_version_href = REPOS_API.read(data[:pulp_href]).latest_version_href
-    pub_href = idempotently_create_rpm_publication(rpm_rpm_repository_version_href, labels)
-    distro = idempotently_create_rpm_distro(name, pub_href)
-    slim_repos[name][:distro_href] = distro.pulp_href
-    slim_repos[name][:distro_url] = distro.base_url
-  end
-
-  output_file = '_slim_repos.yaml'
-  puts "Writing slim_repos information to #{output_file}..."
-  File.open(output_file,'w'){ |f| f.puts slim_repos.to_yaml }
-  puts 'FINIS'
 end
 
+require 'optparse'
+
+options = {
+  action: :use_existing,
+  repos_to_mirror_file: 'repos_to_mirror.yaml',
+}
+
+OptsFilepath=String
+OptionParser.new do |opts|
+  opts.banner = "Usage: do.rb [options]"
+
+  opts.accept(OptsFilepath) do |str|
+    File.exists?(str) || fail( "Could not find specified file: '#{str}'" )
+    File.file?(str) || fail( "Argument is not a file: '#{str}'" )
+    str
+  end
+
+  opts.on(
+    "-f", "--repos-rpms-file FILE", OptsFilepath,
+    "File to specify Repos/RPMs (#{options[:repos_to_mirror_file]})"
+  ) do |f|
+    options[:repos_to_mirror_file] = f
+  end
+
+  opts.on("-n", "--create-new", "Delete existing + Create new repo mirrors") do |v|
+    options[:action] = :create_new
+  end
+
+  opts.on("-e", "--use-existing", "Use existing repo mirrors") do |v|
+    options[:action] = :use_existing
+  end
+
+  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+end.parse!
+
+p options
+p ARGV
+    require 'pry'; binding.pry
