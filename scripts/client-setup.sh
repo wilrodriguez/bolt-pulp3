@@ -1,11 +1,12 @@
 #!/bin/bash -e
 
 
+# For docker clients to connect to docker PIOC-hosted forwarded ports
 # on host:
 # https://serverfault.com/questions/987686/no-network-connectivity-to-from-docker-ce-container-on-centos-8
 sudo firewall-cmd --zone=public --add-masquerade --permanent
 
-
+# Attempts (so far unsuccessful) to get podman rootless containers to connect to each other
 loginctl enable-linger  # https://github.com/giuseppe/libpod/blob/allow-rootless-cni/troubleshooting.md#21-a-rootless-container-running-in-detached-mode-is-closed-at-logout
 sed -i -e 's/^enabled=1/enabled=0/g' /etc/yum.repos.d/*.repo
 
