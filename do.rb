@@ -182,6 +182,7 @@ class Pulp3RpmMirrorSlimmer
       dist_sync_info = @DistributionsAPI.create(rpm_rpm_distribution)
       dist_created_resources = wait_for_create_task_to_complete(dist_sync_info.task)
       dist_href = dist_created_resources.first
+      dist_href.inspect
       distribution_data = @DistributionsAPI.list({ base_path: name })
       return(distribution_data.results.first)
     rescue PulpcoreClient::ApiError, PulpRpmClient::ApiError => e
@@ -348,7 +349,7 @@ class Pulp3RpmMirrorSlimmer
       repo = ensure_rpm_repo(name, pulp_labels)
       rpm_rpm_repository_version_href = create_rpm_repo_mirror(name, data['url'], repo, pulp_labels)
       publication = ensure_rpm_publication(rpm_rpm_repository_version_href, pulp_labels)
-      mirror_distro = ensure_rpm_distro(name, publication.pulp_href)
+      ensure_rpm_distro(name, publication.pulp_href)
     end
     do_use_existing(repos_to_mirror)
   end
@@ -369,6 +370,7 @@ class Pulp3RpmMirrorSlimmer
       repos_to_mirror[name][:dest_repo_href] = repo.pulp_href
     end
     copy_task = advanced_rpm_copy(repos_to_mirror)
+    copy_task.inspect
 
     slim_repos.each do |name, data|
       rpm_rpm_repository_version_href = @ReposAPI.read(data[:pulp_href]).latest_version_href
@@ -379,13 +381,51 @@ class Pulp3RpmMirrorSlimmer
       slim_repos[name][:distro_url] = distro.base_url
     end
 
+
     output_file = '_slim_repos.yaml'
+    output_repo_file = File.basename( output_file, '.yaml' ) + '.repo'
+    output_repo_script = File.basename( output_file, '.yaml' ) + '.sh'
 
     puts "\nWriting slim_repos data to: '#{output_file}"
     File.open(output_file, 'w') { |f| f.puts slim_repos.to_yaml }
 
+
+    yum_repo_file_content = slim_repos.map do |k,v|
+      result = <<~REPO_ENTRY
+        [#{k}]
+        enabled=1
+        baseurl=#{v[:distro_url]}
+        gpgcheck=0
+        repo_gpgcheck=0
+      REPO_ENTRY
+       "#{result}\n"
+    end
+    puts "\nWriting slim_repos repo config to: '#{output_repo_file}"
+    File.open(output_repo_file, 'w') { |f| f.puts yum_repo_file_content }
+
+    dnf_mirror_cmd = <<~CMD_START
+      # On EL7, ensure:
+      #    yum install -y dnf dnf-plugins-core
+      #
+      # Useful EL8-only options: --remote-time --norepopath
+      PATH_TO_LOCAL_MIRROR="$PWD/_download_path"
+      mkdir -p "$PATH_TO_LOCAL_MIRROR"
+      dnf reposync \\
+        --download-metadata --downloadcomps \\
+        --download-path "$PATH_TO_LOCAL_MIRROR" \\
+      CMD_START
+
+    dnf_mirror_cmd += slim_repos.map { |k,v| "  --repofrompath #{k},#{v[:distro_url]}" }.join(" \\\n")
+    dnf_mirror_cmd += " \\\n" + slim_repos.map { |k,v| "  --repoid #{k}" }.join(" \\\n")
+    puts "\nWriting slim_repos repo config to: '#{output_repo_script}"
+    File.open(output_repo_script, 'w') { |f| f.puts dnf_mirror_cmd }
+
+
     puts "\nSlim repos:",
       slim_repos.map{ |k,v| "    #{v[:distro_url]}" }.join("\n"), ''
+
+    puts "\nYum repo file content:", yum_repo_file_content
+
   end
 
   def do(action:, repos_to_mirror_file:)
