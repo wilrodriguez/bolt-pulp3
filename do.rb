@@ -108,7 +108,7 @@ class Pulp3RpmMirrorSlimmer
     repos_data
   end
 
-  def create_rpm_repo_mirror(name, remote_url, _labels = {})
+  def create_rpm_repo_mirror(name, remote_url, repo, _labels = {})
     # create remote
     rpm_rpm_remote = PulpRpmClient::RpmRpmRemote.new(
       name: name,
@@ -117,15 +117,15 @@ class Pulp3RpmMirrorSlimmer
       tls_validation: false
     )
 
-    remotes_data = @RemotesAPI.create(rpm_rpm_remote, opts)
+    remotes_data = @RemotesAPI.create(rpm_rpm_remote)
 
     # Set up sync
     # https://www.rubydoc.info/gems/pulp_rpm_client/PulpRpmClient/RpmRepositorySyncURL
-    pm_repository_sync_url = PulpRpmClient::RpmRepositorySyncURL.new(
+    rpm_repository_sync_url = PulpRpmClient::RpmRepositorySyncURL.new(
       remote: remotes_data.pulp_href,
       mirror: true
     )
-    sync_async_info = @ReposAPI.sync(repos_data.pulp_href, rpm_repository_sync_url)
+    sync_async_info = @ReposAPI.sync(repo.pulp_href, rpm_repository_sync_url)
 
     created_resources = wait_for_create_task_to_complete(sync_async_info.task)
     created_resources.first
@@ -343,14 +343,14 @@ class Pulp3RpmMirrorSlimmer
     # TODO destroy related slim dest repos, too?
     pulp_labels = @pulp_labels.merge({ 'reporole' => 'remote_mirror' })
 
-    repos_to_mirror.each { |name, data| delete_rpm_repo_mirror(name, data[:url]) }
-    repos_to_mirror.each do |name, _data|
+    repos_to_mirror.each { |name, data| delete_rpm_repo_mirror(name, data['url']) }
+    repos_to_mirror.each do |name, data|
       repo = ensure_rpm_repo(name, pulp_labels)
-      rpm_rpm_repository_version_href = create_rpm_repo_mirror(name, remote_url, pulp_labels)
+      rpm_rpm_repository_version_href = create_rpm_repo_mirror(name, data['url'], repo, pulp_labels)
       publication = ensure_rpm_publication(rpm_rpm_repository_version_href, pulp_labels)
       mirror_distro = ensure_rpm_distro(name, publication.pulp_href)
     end
-    #  TODO: do everything that's in USE_EXISTING, too
+    do_use_existing(repos_to_mirror)
   end
 
   def do_use_existing(repos_to_mirror)

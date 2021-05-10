@@ -1,10 +1,14 @@
 ---
-pulp-el7-os:
-  url: http://mirror.centos.org/centos/7/os/x86_64/
+pulp-baseos:
+  url: http://mirror.centos.org/centos/8/BaseOS/x86_64/os/
   rpms:
-    - apr-util-ldap
-pulp-el7-epel:
-  url: https://download.fedoraproject.org/pub/epel/7x86_64/
+  - NetworkManager # depends on baseos: NetworkManager-libnm, libndp
+pulp-appstream:
+  url: http://mirror.centos.org/centos/8/AppStream/x86_64/os/
+  rpms:
+  - 389-ds-base # depends on lots of things from baseos: cracklib-dicts,selinux-policy +
+pulp-epel:
+  url: https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
   rpms:
   - htop        # no deps
   - vim-ansible # depends on appstream: vim-filesystem

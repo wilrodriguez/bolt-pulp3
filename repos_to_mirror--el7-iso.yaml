@@ -1,0 +1,147 @@
+---
+pulp-el7-os:
+  url: http://mirror.centos.org/centos/7/os/x86_64/
+  rpms:
+  - apr-util-ldap
+  - ima-evm-utils
+  - libarchive-devel
+  - perl-Capture-Tiny
+  - perl-Config-Simple
+  - perl-File-Which
+  - perl-Switch
+  - protobuf
+  - rubygem-rake
+  - tpm2-abrmd
+  - tpm2-tools
+  - tpm2-tss
+  - tpm2-tss-devel
+pulp-el7-extras:
+  url: http://mirror.centos.org/centos/7/extras/x86_64/
+  rpms:
+  - createrepo_c
+  - createrepo_c-libs
+  - libssh
+pulp-el7-epel:
+  url: https://dl.fedoraproject.org/pub/epel/7/x86_64/
+  rpms:
+  - caja
+  - caja-extensions
+  - caja-extensions-common
+  - caja-open-terminal
+  - caja-schemas
+  - clamav
+  - clamav-data
+  - clamav-devel
+  - clamav-filesystem
+  - clamav-lib
+  - clamav-update
+  - clamd
+  - fortune-mod
+  - fuse-sshfs
+  - gtk-murrine-engine
+  - gtk2-engines
+  - haveged
+  - jq
+  - libNX_X11
+  - libXcomp
+  - libXcompshad
+  - libconfuse
+  - libev
+  - libmatekbd
+  - libmatemixer
+  - libmateweather
+  - libmateweather-data
+  - libprelude
+  - libwnck
+  - log4cplus
+  - lyx-fonts
+  - marco
+  - mate-control-center
+  - mate-control-center-filesystem
+  - mate-desktop
+  - mate-desktop-libs
+  - mate-icon-theme
+  - mate-menus
+  - mate-menus-libs
+  - mate-notification-daemon
+  - mate-panel
+  - mate-panel-libs
+  - mate-polkit
+  - mate-power-manager
+  - mate-screensaver
+  - mate-session-manager
+  - mate-settings-daemon
+  - mate-themes
+  - mate-user-guide
+  - nx-libs
+  - nxagent
+  - nxproxy
+  - oniguruma
+  - perl-File-BaseDir
+  - perl-X2Go-Log
+  - perl-X2Go-Server
+  - perl-X2Go-Server-DB
+  - pwgen
+  - python-linecache2
+  - re2
+  - rkhunter
+  - rubygem-highline
+  - rubygem-net-ldap
+  - rubygem-net-ldap-doc
+  - rubygem-rake-compiler
+  - unhide
+  - unique
+  - x2goagent
+  - x2goclient
+  - x2goserver
+  - x2goserver-common
+  - x2goserver-xsession
+pulp-el7-postgresql:
+  url: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/
+  rpms:
+  - postgresql96
+  - postgresql96-contrib
+  - postgresql96-libs
+  - postgresql96-server
+pulp-el7-simp:
+  url: https://download.simp-project.com/SIMP/yum/releases/latest/el/7Server/x86_64/simp/
+  rpms:
+  - HIRS_Provisioner_TPM_1_2
+  - HIRS_Provisioner_TPM_2_0
+  - chkrootkit
+  - paccor
+  - ruby-ldap
+  - simp-lastbind
+  - simp-ppolicy-check-password
+  - simp-tpm12-simulator
+  - simp-tpm2-simulator
+  - simp-vendored-r10k
+  - simp-vendored-r10k-doc
+  - simp-vendored-r10k-gem-colored
+  - simp-vendored-r10k-gem-cri
+  - simp-vendored-r10k-gem-faraday
+  - simp-vendored-r10k-gem-faraday_middleware
+  - simp-vendored-r10k-gem-fast_gettext
+  - simp-vendored-r10k-gem-gettext
+  - simp-vendored-r10k-gem-gettext-setup
+  - simp-vendored-r10k-gem-locale
+  - simp-vendored-r10k-gem-log4r
+  - simp-vendored-r10k-gem-minitar
+  - simp-vendored-r10k-gem-multi_json
+  - simp-vendored-r10k-gem-multipart-post
+  - simp-vendored-r10k-gem-puppet_forge
+  - simp-vendored-r10k-gem-r10k
+  - simp-vendored-r10k-gem-semantic_puppet
+  - simp-vendored-r10k-gem-text
+  - sudosh2
+  - tlog
+  - tpm_module
+pulp-el7-puppet:
+  url: https://yum.puppet.com/puppet6/el/7/x86_64/
+  rpms:
+  - puppet-agent
+  - puppet-bolt
+  - puppet6-release
+  - puppetdb
+  - puppetdb-termini
+  - puppetserver
