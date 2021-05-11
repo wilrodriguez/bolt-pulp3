@@ -79,7 +79,6 @@ plan pulp3::in_one_container (
       --volume "${container_root}/pgsql:/var/lib/pgsql${selinux_suffix}" \
       --volume "${container_root}/containers:/var/lib/containers${selinux_suffix}" \
       --volume "${container_root}/run:/run${selinux_suffix}" \
-      --network pulpnet \
       "${container_image}"
     | START_CMD
 

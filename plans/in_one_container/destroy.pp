@@ -31,44 +31,32 @@ plan pulp3::in_one_container::destroy (
     "${runtime_exe} container ls -a --format='{{.Image}}  {{.ID}}  {{.Names}}'",
     $host,
   )
-  unless $ls_a_result[0].value['stdout'].split("\n").any |$x| {
+
+  $container_exists = $ls_a_result[0].value['stdout'].split("\n").any |$x| {
     $x.match("^${container_image}.*${container_name}$" )
-  }{
+  }
+
+  unless $container_exists{
     out::message( "Cannot find container '${container_name}'" )
-    return false
-  }
-
-###  $ls_result = run_command(
-###    "${runtime_exe} container ls --format='{{.Image}}  {{.ID}}  {{.Names}}'",
-###    $host,
-###  )
-###  if $ls_result[0].value['stdout'].split("\n").any |$x| {
-###    $x.match("^${container_image}.*${container_name}$")
-###  }{
-###    out::message( "Stopping container '${container_name}'..." )
-###    $stop_result = run_command(
-###      "${runtime_exe} container stop ${container_name}",
-###      $host,
-###    })
-###  }
-
-  unless $force {
-    $confirm = prompt::menu(
-      "Destroy container '${container_name}'?",
-      ['yes','no'],
-      'default' => 'no',
-    )
-    if $confirm == 'no' {
-      out::message('Exiting plan...')
-      return undef
+  }else{
+    unless $force {
+      $confirm = prompt::menu(
+        "Destroy container '${container_name}'?",
+        ['yes','no'],
+        'default' => 'no',
+      )
+      if $confirm == 'no' {
+        out::message('Exiting plan...')
+        return undef
+      }
     }
+    out::message( "Destroying container '${container_name}'..." )
+    $rm_result = run_command("${runtime_exe} container rm -f ${container_name}", $host)
   }
-  out::message( "Destroying container '${container_name}'..." )
-  $rm_result = run_command("${runtime_exe} container rm -f ${container_name}", $host)
 
   unless $container_root.strip.empty or $container_root == '/' {
     $rm_directories_result = run_command(
-      "rm -rf '${container_root}/{run,settings,pulp_storage,containers,pgsql}'",
+      "rm -rf '${container_root}/run' '${container_root}/settings' '${container_root}/pulp_storage' '${container_root}/containers' '${container_root}/pgsql'",
       $host,
       {'_run_as' => 'root'},
     )

@@ -137,7 +137,7 @@ class Pulp3RpmMirrorSlimmer
     end
 
     created_resources = wait_for_create_task_to_complete(sync_async_info.task)
-require 'pry'; binding.pry unless created_resources.first
+    require 'pry'; binding.pry unless created_resources.first
     created_resources.first
   end
 
@@ -332,7 +332,6 @@ require 'pry'; binding.pry unless created_resources.first
         })
         results += paginated_package_response_list.results
         offset += paginated_package_response_list.results.size
-        require 'pry'; binding.pry if offset == 0
         next_url = paginated_package_response_list._next
       end
     end
@@ -410,7 +409,6 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       repos_to_mirror[name][:dest_repo_href] = repo.pulp_href
     end
 
-require 'pry'; binding.pry
     copy_task = advanced_rpm_copy(repos_to_mirror)
     copy_task.inspect
 
