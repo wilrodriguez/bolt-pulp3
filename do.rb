@@ -339,8 +339,8 @@ class Pulp3RpmMirrorSlimmer
     # Check that we found all rpms
     missing_names = rpms.uniq - results.map(&:name).uniq
     unless missing_names.empty?
-      warn "WARNING: Mising #{missing_names.size} requested RPMs:\n  - #{missing_names.join("\n  - ")}\n\n"
-      # FIXME TODO log this/return thi
+      warn "WARNING: Missing #{missing_names.size} requested RPMs:\n  - #{missing_names.join("\n  - ")}\n\n"
+      # FIXME TODO log this/return the missing RPMs
       sleep 10
     end
 
@@ -367,10 +367,14 @@ class Pulp3RpmMirrorSlimmer
 
       async_response = @RpmCopyAPI.copy_content(copy)
       wait_for_task_to_complete(async_response.task)
+
+      task_result = wait_for_task_to_complete(async_response.task)
+      raise PulpcoreClient::ApiError, "Pulp3 ERROR: Task #{async_response.task} failed:\n\n#{task_result.error['description']}" if task_result.state == 'failed'
       async_response.task
     rescue PulpcoreClient::ApiError => e
       puts "Exception when calling API: #{e}"
       require 'pry'; binding.pry
+      raise e
     end
   end
 
