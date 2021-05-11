@@ -65,4 +65,12 @@ plan pulp3::in_one_container::destroy (
   }
   out::message( "Destroying container '${container_name}'..." )
   $rm_result = run_command("${runtime_exe} container rm -f ${container_name}", $host)
+
+  unless $container_root.strip.empty or $container_root == '/' {
+    $rm_directories_result = run_command(
+      "rm -rf '${container_root}/{run,settings,pulp_storage,containers,pgsql}'",
+      $host,
+      {'_run_as' => 'root'},
+    )
+  }
 }

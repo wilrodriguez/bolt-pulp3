@@ -50,6 +50,7 @@ plan pulp3::in_one_container::apply_local_filesystem (
         ANSIBLE_API_HOSTNAME='http://${host.facts['fqdn']}:${container_port}'
         ANSIBLE_CONTENT_HOSTNAME='http://${host.facts['fqdn']}:${container_port}/pulp/content'
         TOKEN_AUTH_DISABLED=True
+        ALLOWED_CONTENT_CHECKSUMS=['sha224', 'sha256', 'sha384', 'sha512', 'sha1', 'md5']
         ALLOWED_IMPORT_PATHS=['/run/ISOs/unpacked','/allowed_imports']
         | SETTINGS
     }
