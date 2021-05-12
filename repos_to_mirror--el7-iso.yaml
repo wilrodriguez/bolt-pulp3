@@ -1,1709 +1,1841 @@
 ---
-pulp-el7-puppet:
+pulp-puppet:
   url: http://yum.puppet.com/puppet6/el/7/x86_64/
-  #proxy_url: http://localhost:8888
+  # options passed directly to the remotes API to create a new remote
+  mirror_options:
+    #policy: immediate
+    policy: on_demand
+    #proxy_url: http://localhost:8888
   rpms:
-  - puppet-agent
-  - puppet-bolt
-  - puppet6-release
-  - puppetdb
-  - puppetdb-termini
-  - puppetserver
-pulp-el7-os:
+  - name: puppet-agent
+  - name: puppet-bolt
+  - name: puppet6-release
+  - name: puppetdb
+  - name: puppetdb-termini
+  - name: puppetserver
+    #version: '~> 6.8.0'
+pulp-os:
   url: http://mirror.centos.org/centos/7/os/x86_64/
   rpms:
-  - apr-util-ldap
-  - ima-evm-utils
-  - libarchive-devel
-  - perl-Capture-Tiny
-  - perl-Config-Simple
-  - perl-File-Which
-  - perl-Switch
-  - protobuf
-  - rubygem-rake
-  - tpm2-abrmd
-  - tpm2-tools
-  - tpm2-tss
-  - tpm2-tss-devel
+  - name: apr-util-ldap
+  - name: ima-evm-utils
+  - name: libarchive-devel
+  - name: perl-Capture-Tiny
+  - name: perl-Config-Simple
+  - name: perl-File-Which
+  - name: perl-Switch
+  - name: protobuf
+  - name: rubygem-rake
+  - name: tpm2-abrmd
+  - name: tpm2-tools
+  - name: tpm2-tss
+  - name: tpm2-tss-devel
   # pkglist.txt
-  - 389-ds-base-libs
-  - GConf2
-  - GeoIP
-  - ModemManager-glib
-  - NetworkManager
-  - NetworkManager-adsl
-  - NetworkManager-bluetooth
-  - NetworkManager-glib
-  - NetworkManager-libnm
-  - NetworkManager-libreswan
-  - NetworkManager-libreswan-gnome
-  - NetworkManager-ppp
-  - NetworkManager-team
-  - NetworkManager-tui
-  - NetworkManager-wifi
-  - NetworkManager-wwan
-  - ORBit2
-  - OpenIPMI
-  - OpenIPMI-libs
-  - OpenIPMI-modalias
-  - PackageKit
-  - PackageKit-glib
-  - PackageKit-yum
-  - SDL
-  - abattis-cantarell-fonts
-  - accountsservice
-  - accountsservice-libs
-  - acl
-  - acpid
-  - adobe-mappings-cmap
-  - adobe-mappings-cmap-deprecated
-  - adobe-mappings-pdf
-  - adwaita-cursor-theme
-  - adwaita-gtk2-theme
-  - adwaita-icon-theme
-  - aic94xx-firmware
-  - aide
-  - alacarte
-  - alsa-firmware
-  - alsa-lib
-  - alsa-tools-firmware
-  - ant
-  - antlr-tool
-  - apache-commons-cli
-  - apache-commons-codec
-  - apache-commons-collections
-  - apache-commons-daemon
-  - apache-commons-dbcp
-  - apache-commons-io
-  - apache-commons-lang
-  - apache-commons-logging
-  - apache-commons-pool
-  - apr
-  - apr-devel
-  - apr-util
-  - apr-util-devel
-  - apr-util-openssl
-  - args4j
-  - arpwatch
-  - at
-  - atk
-  - atk-devel
-  - attr
-  - at-spi2-atk
-  - at-spi2-core
-  - audit
-  - audit-libs
-  - audit-libs-python
-  - augeas-libs
-  - authconfig
-  - autoconf
-  - autofs
-  - autogen-libopts
-  - automake
-  - avahi
-  - avahi-autoipd
-  - avahi-glib
-  - avahi-libs
-  - avalon-framework
-  - avalon-logkit
-  - basesystem
-  - bash
-  - bc
-  - bcel
-  - bea-stax
-  - bea-stax-api
-  - bind
-  - bind-chroot
-  - bind-dyndb-ldap
-  - bind-export-libs
-  - bind-libs
-  - bind-libs-lite
-  - bind-license
-  - bind-pkcs11
-  - bind-pkcs11-libs
-  - bind-pkcs11-utils
-  - bind-utils
-  - binutils
-  - biosdevname
-  - bitmap-fixed-fonts
-  - bitmap-lucida-typewriter-fonts
-  - bluez
-  - bluez-libs
-  - bolt
-  - boost-iostreams
-  - boost-random
-  - boost-regex
-  - boost-system
-  - boost-thread
-  - brasero
-  - brasero-libs
-  - brasero-nautilus
-  - bridge-utils
-  - brlapi
-  - brltty
-  - btrfs-progs
-  - bzip2
-  - bzip2-libs
-  - cairo
-  - cairo-gobject
-  - cal10n
+  - name: 389-ds-base-libs
+  - name: GConf2
+  - name: GeoIP
+  - name: ModemManager-glib
+  - name: NetworkManager
+  - name: NetworkManager-adsl
+  - name: NetworkManager-bluetooth
+  - name: NetworkManager-glib
+  - name: NetworkManager-libnm
+  - name: NetworkManager-libreswan
+  - name: NetworkManager-libreswan-gnome
+  - name: NetworkManager-ppp
+  - name: NetworkManager-team
+  - name: NetworkManager-tui
+  - name: NetworkManager-wifi
+  - name: NetworkManager-wwan
+  - name: ORBit2
+  - name: OpenIPMI
+  - name: OpenIPMI-libs
+  - name: OpenIPMI-modalias
+  - name: PackageKit
+  - name: PackageKit-glib
+  - name: PackageKit-yum
+  - name: SDL
+  - name: abattis-cantarell-fonts
+  - name: accountsservice
+  - name: accountsservice-libs
+  - name: acl
+  - name: acpid
+  - name: adobe-mappings-cmap
+  - name: adobe-mappings-cmap-deprecated
+  - name: adobe-mappings-pdf
+  - name: adwaita-cursor-theme
+  - name: adwaita-gtk2-theme
+  - name: adwaita-icon-theme
+  - name: aic94xx-firmware
+  - name: aide
+  - name: alacarte
+  - name: alsa-firmware
+  - name: alsa-lib
+  - name: alsa-tools-firmware
+  - name: ant
+  - name: antlr-tool
+  - name: apache-commons-cli
+  - name: apache-commons-codec
+  - name: apache-commons-collections
+  - name: apache-commons-daemon
+  - name: apache-commons-dbcp
+  - name: apache-commons-io
+  - name: apache-commons-lang
+  - name: apache-commons-logging
+  - name: apache-commons-pool
+  - name: apr
+  - name: apr-devel
+  - name: apr-util
+  - name: apr-util-devel
+  - name: apr-util-openssl
+  - name: args4j
+  - name: arpwatch
+  - name: at
+  - name: atk
+  - name: atk-devel
+  - name: attr
+  - name: at-spi2-atk
+  - name: at-spi2-core
+  - name: audit
+  - name: audit-libs
+  - name: audit-libs-python
+  - name: augeas-libs
+  - name: authconfig
+  - name: autoconf
+  - name: autofs
+  - name: autogen-libopts
+  - name: automake
+  - name: avahi
+  - name: avahi-autoipd
+  - name: avahi-glib
+  - name: avahi-libs
+  - name: avalon-framework
+  - name: avalon-logkit
+  - name: basesystem
+  - name: bash
+  - name: bc
+  - name: bcel
+  - name: bea-stax
+  - name: bea-stax-api
+  - name: bind
+  - name: bind-chroot
+  - name: bind-dyndb-ldap
+  - name: bind-export-libs
+  - name: bind-libs
+  - name: bind-libs-lite
+  - name: bind-license
+  - name: bind-pkcs11
+  - name: bind-pkcs11-libs
+  - name: bind-pkcs11-utils
+  - name: bind-utils
+  - name: binutils
+  - name: biosdevname
+  - name: bitmap-fixed-fonts
+  - name: bitmap-lucida-typewriter-fonts
+  - name: bluez
+  - name: bluez-libs
+  - name: bolt
+  - name: boost-iostreams
+  - name: boost-random
+  - name: boost-regex
+  - name: boost-system
+  - name: boost-thread
+  - name: brasero
+  - name: brasero-libs
+  - name: brasero-nautilus
+  - name: bridge-utils
+  - name: brlapi
+  - name: brltty
+  - name: btrfs-progs
+  - name: bzip2
+  - name: bzip2-libs
+  - name: cairo
+  - name: cairo-gobject
+  - name: cal10n
   # caribou* only in rhel-server distribution ISO
-  - caribou
-  - caribou-gtk2-module
-  - caribou-gtk3-module
-  - ca-certificates
-  - cdparanoia
-  - cdparanoia-libs
-  - cdrdao
+  - name: caribou
+  - name: caribou-gtk2-module
+  - name: caribou-gtk3-module
+  - name: ca-certificates
+  - name: cdparanoia
+  - name: cdparanoia-libs
+  - name: cdrdao
   # centos-* only in CentOS distribution ISO
-  - centos-bookmarks
-  - centos-indexhtml
-  - centos-logos
-  - centos-release
-  - certmonger
-  - checkpolicy
-  - cheese-libs
-  - chkconfig
-  - chrony
-  - cifs-utils
-  - clutter
-  - clutter-gst2
-  - clutter-gst3
-  - clutter-gtk
-  - codemodel
-  - cogl
-  - colord
-  - colord-gtk
-  - colord-libs
-  - color-filesystem
-  - compat-libcogl12
-  - compat-libcogl-pango12
-  - compat-libcolord1
-  - compat-libical1
-  - comps-extras
-  - control-center
-  - control-center-filesystem
-  - coolkey
-  - copy-jdk-configs
-  - coreutils
+  - name: centos-bookmarks
+  - name: centos-indexhtml
+  - name: centos-logos
+  - name: centos-release
+  - name: certmonger
+  - name: checkpolicy
+  - name: cheese-libs
+  - name: chkconfig
+  - name: chrony
+  - name: cifs-utils
+  - name: clutter
+  - name: clutter-gst2
+  - name: clutter-gst3
+  - name: clutter-gtk
+  - name: codemodel
+  - name: cogl
+  - name: colord
+  - name: colord-gtk
+  - name: colord-libs
+  - name: color-filesystem
+  - name: compat-libcogl12
+  - name: compat-libcogl-pango12
+  - name: compat-libcolord1
+  - name: compat-libical1
+  - name: comps-extras
+  - name: control-center
+  - name: control-center-filesystem
+  - name: coolkey
+  - name: copy-jdk-configs
+  - name: coreutils
   # corosync* only in CentOS distribution ISO
-  - corosync
-  - corosynclib
-  - cpio
-  - cpp
-  - cracklib
-  - cracklib-dicts
-  - createrepo
-  - cronie
-  - cronie-anacron
-  - crontabs
-  - cryptsetup
-  - cryptsetup-libs
-  - ctags
-  - cups
-  - cups-client
-  - cups-filesystem
-  - cups-filters
-  - cups-filters-libs
-  - cups-libs
-  - cups-pk-helper
-  - curl
-  - custodia
-  - cvs
-  - cyrus-sasl
-  - cyrus-sasl-devel
-  - cyrus-sasl-gssapi
-  - cyrus-sasl-lib
-  - cyrus-sasl-md5
-  - cyrus-sasl-plain
-  - c-ares
-  - dbus
-  - dbus-glib
-  - dbus-libs
-  - dbus-python
-  - dbus-x11
-  - dconf
-  - dejavu-fonts-common
-  - dejavu-sans-fonts
-  - dejavu-sans-mono-fonts
-  - dejavu-serif-fonts
-  - deltarpm
-  - desktop-file-utils
-  - device-mapper
-  - device-mapper-event
-  - device-mapper-event-libs
-  - device-mapper-libs
-  - device-mapper-multipath
-  - device-mapper-multipath-libs
-  - device-mapper-persistent-data
-  - dhclient
-  - dhcp
-  - dhcp-common
-  - dhcp-libs
-  - diffutils
-  - dmidecode
-  - dnsmasq
-  - docbook-dtds
-  - docbook-style-dsssl
-  - docbook-style-xsl
-  - docbook-utils
-  - dom4j
-  - dos2unix
-  - dosfstools
-  - dotconf
-  - dracut
-  - dracut-config-generic
-  - dracut-config-rescue
-  - dracut-fips
-  - dracut-fips-aesni
-  - dracut-network
-  - dvd+rw-tools
-  - dwz
-  - e2fsprogs
-  - e2fsprogs-libs
-  - easymock2
-  - ebtables
-  - ecj
-  - ed
-  - efibootmgr
-  - efivar-libs
-  - elfutils
-  - elfutils-default-yama-scope
-  - elfutils-libelf
-  - elfutils-libs
-  - elinks
-  - emacs-filesystem
-  - enchant
-  - espeak
-  - ethtool
-  - evolution-data-server
-  - evolution-data-server-langpacks
-  - exempi
-  - expat
-  - expat-devel
-  - fence-virt
-  - festival
-  - festival-freebsoft-utils
-  - festival-lib
-  - festival-speechtools-libs
-  - festvox-slt-arctic-hts
-  - file
-  - filesystem
-  - file-libs
-  - findutils
-  - fipscheck
-  - fipscheck-lib
-  - firefox
-  - firewalld
-  - firewalld-filesystem
-  - flac-libs
-  - flatpak
-  - flatpak-libs
-  - flite
-  - fltk
-  - fontawesome-fonts
-  - fontconfig
-  - fontpackages-filesystem
-  - foomatic
-  - foomatic-db
-  - foomatic-db-filesystem
-  - foomatic-db-ppds
-  - foomatic-filters
-  - fprintd
-  - fprintd-pam
-  - freetype
-  - freetype-devel
-  - fribidi
-  - fuse
-  - fuse-libs
-  - fxload
-  - gamin
-  - gawk
-  - gcc
-  - gcc-c++
-  - gcr
-  - gd
-  - gdb
-  - gdbm
-  - gdbm-devel
-  - gdisk
-  - gdk-pixbuf2
-  - gdk-pixbuf2-devel
-  - gdm
-  - genisoimage
-  - geoclue
-  - geoclue2
-  - geoclue2-libs
-  - geocode-glib
-  - geoipupdate
-  - geronimo-annotation
-  - geronimo-jms
-  - geronimo-jta
-  - gettext
-  - gettext-libs
-  - ghostscript
-  - ghostscript-cups
-  - ghostscript-fonts
-  - giflib
-  - git
-  - gjs
-  - glassfish-dtd-parser
-  - glassfish-fastinfoset
-  - glassfish-jaxb
-  - glassfish-jaxb-api
-  - glib2
-  - glib2-devel
-  - glibc
-  - glibc-common
-  - glibc-devel
-  - glibc-headers
-  - glib-networking
-  - glx-utils
-  - gl-manpages
-  - gmp
-  - gnome-bluetooth
-  - gnome-bluetooth-libs
-  - gnome-desktop3
-  - gnome-icon-theme
-  - gnome-icon-theme-legacy
-  - gnome-icon-theme-symbolic
-  - gnome-keyring
-  - gnome-keyring-pam
-  - gnome-menus
-  - gnome-online-accounts
-  - gnome-session
-  - gnome-session-xsession
-  - gnome-settings-daemon
-  - gnome-shell
-  - gnome-terminal
-  - gnome-themes-standard
-  - gnome-user-docs
-  - gnome-vfs2
-  - gnupg2
-  - gnutls
-  - gnutls-dane
-  - gnutls-utils
-  - gobject-introspection
-  - google-noto-emoji-color-fonts
-  - gperftools-libs
-  - gpgme
-  - gpm
-  - gpm-libs
-  - graphite2
-  - graphite2-devel
-  - grep
-  - grilo
-  - groff-base
-  - grub2
-  - grub2-common
-  - grub2-efi-x64
-  - grub2-pc
-  - grub2-pc-modules
-  - grub2-tools
-  - grub2-tools-extra
-  - grub2-tools-minimal
-  - grubby
-  - gsettings-desktop-schemas
-  - gsm
-  - gssproxy
-  - gstreamer
-  - gstreamer1
-  - gstreamer1-plugins-bad-free
-  - gstreamer1-plugins-base
-  - gstreamer1-plugins-good
-  - gstreamer-plugins-base
-  - gstreamer-plugins-good
-  - gstreamer-tools
-  - gtk2
-  - gtk3
-  - gtk-update-icon-cache
-  - guava
-  - gucharmap
-  - gucharmap-libs
-  - gvfs
-  - gvfs-client
-  - gzip
-  - hamcrest
-  - hardlink
-  - harfbuzz
-  - harfbuzz-devel
-  - harfbuzz-icu
-  - hdparm
-  - hesiod
-  - hicolor-icon-theme
-  - hmaccalc
-  - hostname
-  - hsqldb
-  - httpcomponents-client
-  - httpcomponents-core
-  - httpd
-  - httpd-devel
-  - httpd-tools
-  - http-parser
-  - hunspell
-  - hunspell-en-US
-  - hwdata
-  - hyphen
-  - ibus
-  - ibus-gtk2
-  - ibus-gtk3
-  - ibus-libs
-  - ibus-setup
-  - icedax
+  - name: corosync
+  - name: corosynclib
+  - name: cpio
+  - name: cpp
+  - name: cracklib
+  - name: cracklib-dicts
+  - name: createrepo
+  - name: cronie
+  - name: cronie-anacron
+  - name: crontabs
+  - name: cryptsetup
+  - name: cryptsetup-libs
+  - name: ctags
+  - name: cups
+  - name: cups-client
+  - name: cups-filesystem
+  - name: cups-filters
+  - name: cups-filters-libs
+  - name: cups-libs
+  - name: cups-pk-helper
+  - name: curl
+  - name: custodia
+  - name: cvs
+  - name: cyrus-sasl
+  - name: cyrus-sasl-devel
+  - name: cyrus-sasl-gssapi
+  - name: cyrus-sasl-lib
+  - name: cyrus-sasl-md5
+  - name: cyrus-sasl-plain
+  - name: c-ares
+  - name: dbus
+  - name: dbus-glib
+  - name: dbus-libs
+  - name: dbus-python
+  - name: dbus-x11
+  - name: dconf
+  - name: dejavu-fonts-common
+  - name: dejavu-sans-fonts
+  - name: dejavu-sans-mono-fonts
+  - name: dejavu-serif-fonts
+  - name: deltarpm
+  - name: desktop-file-utils
+  - name: device-mapper
+  - name: device-mapper-event
+  - name: device-mapper-event-libs
+  - name: device-mapper-libs
+  - name: device-mapper-multipath
+  - name: device-mapper-multipath-libs
+  - name: device-mapper-persistent-data
+  - name: dhclient
+  - name: dhcp
+  - name: dhcp-common
+  - name: dhcp-libs
+  - name: diffutils
+  - name: dmidecode
+  - name: dnsmasq
+  - name: docbook-dtds
+  - name: docbook-style-dsssl
+  - name: docbook-style-xsl
+  - name: docbook-utils
+  - name: dom4j
+  - name: dos2unix
+  - name: dosfstools
+  - name: dotconf
+  - name: dracut
+  - name: dracut-config-generic
+  - name: dracut-config-rescue
+  - name: dracut-fips
+  - name: dracut-fips-aesni
+  - name: dracut-network
+  - name: dvd+rw-tools
+  - name: dwz
+  - name: e2fsprogs
+  - name: e2fsprogs-libs
+  - name: easymock2
+  - name: ebtables
+  - name: ecj
+  - name: ed
+  - name: efibootmgr
+  - name: efivar-libs
+  - name: elfutils
+  - name: elfutils-default-yama-scope
+  - name: elfutils-libelf
+  - name: elfutils-libs
+  - name: elinks
+  - name: emacs-filesystem
+  - name: enchant
+  - name: espeak
+  - name: ethtool
+  - name: evolution-data-server
+  - name: evolution-data-server-langpacks
+  - name: exempi
+  - name: expat
+  - name: expat-devel
+  - name: fence-virt
+  - name: festival
+  - name: festival-freebsoft-utils
+  - name: festival-lib
+  - name: festival-speechtools-libs
+  - name: festvox-slt-arctic-hts
+  - name: file
+  - name: filesystem
+  - name: file-libs
+  - name: findutils
+  - name: fipscheck
+  - name: fipscheck-lib
+  - name: firefox
+  - name: firewalld
+  - name: firewalld-filesystem
+  - name: flac-libs
+  - name: flatpak
+  - name: flatpak-libs
+  - name: flite
+  - name: fltk
+  - name: fontawesome-fonts
+  - name: fontconfig
+  - name: fontpackages-filesystem
+  - name: foomatic
+  - name: foomatic-db
+  - name: foomatic-db-filesystem
+  - name: foomatic-db-ppds
+  - name: foomatic-filters
+  - name: fprintd
+  - name: fprintd-pam
+  - name: freetype
+  - name: freetype-devel
+  - name: fribidi
+  - name: fuse
+  - name: fuse-libs
+  - name: fxload
+  - name: gamin
+  - name: gawk
+  - name: gcc
+  - name: gcc-c++
+  - name: gcr
+  - name: gd
+  - name: gdb
+  - name: gdbm
+  - name: gdbm-devel
+  - name: gdisk
+  - name: gdk-pixbuf2
+  - name: gdk-pixbuf2-devel
+  - name: gdm
+  - name: genisoimage
+  - name: geoclue
+  - name: geoclue2
+  - name: geoclue2-libs
+  - name: geocode-glib
+  - name: geoipupdate
+  - name: geronimo-annotation
+  - name: geronimo-jms
+  - name: geronimo-jta
+  - name: gettext
+  - name: gettext-libs
+  - name: ghostscript
+  - name: ghostscript-cups
+  - name: ghostscript-fonts
+  - name: giflib
+  - name: git
+  - name: gjs
+  - name: glassfish-dtd-parser
+  - name: glassfish-fastinfoset
+  - name: glassfish-jaxb
+  - name: glassfish-jaxb-api
+  - name: glib2
+  - name: glib2-devel
+  - name: glibc
+  - name: glibc-common
+  - name: glibc-devel
+  - name: glibc-headers
+  - name: glib-networking
+  - name: glx-utils
+  - name: gl-manpages
+  - name: gmp
+  - name: gnome-bluetooth
+  - name: gnome-bluetooth-libs
+  - name: gnome-desktop3
+  - name: gnome-icon-theme
+  - name: gnome-icon-theme-legacy
+  - name: gnome-icon-theme-symbolic
+  - name: gnome-keyring
+  - name: gnome-keyring-pam
+  - name: gnome-menus
+  - name: gnome-online-accounts
+  - name: gnome-session
+  - name: gnome-session-xsession
+  - name: gnome-settings-daemon
+  - name: gnome-shell
+  - name: gnome-terminal
+  - name: gnome-themes-standard
+  - name: gnome-user-docs
+  - name: gnome-vfs2
+  - name: gnupg2
+  - name: gnutls
+  - name: gnutls-dane
+  - name: gnutls-utils
+  - name: gobject-introspection
+  - name: google-noto-emoji-color-fonts
+  - name: gperftools-libs
+  - name: gpgme
+  - name: gpm
+  - name: gpm-libs
+  - name: graphite2
+  - name: graphite2-devel
+  - name: grep
+  - name: grilo
+  - name: groff-base
+  - name: grub2
+  - name: grub2-common
+  - name: grub2-efi-x64
+  - name: grub2-pc
+  - name: grub2-pc-modules
+  - name: grub2-tools
+  - name: grub2-tools-extra
+  - name: grub2-tools-minimal
+  - name: grubby
+  - name: gsettings-desktop-schemas
+  - name: gsm
+  - name: gssproxy
+  - name: gstreamer
+  - name: gstreamer1
+  - name: gstreamer1-plugins-bad-free
+  - name: gstreamer1-plugins-base
+  - name: gstreamer1-plugins-good
+  - name: gstreamer-plugins-base
+  - name: gstreamer-plugins-good
+  - name: gstreamer-tools
+  - name: gtk2
+  - name: gtk3
+  - name: gtk-update-icon-cache
+  - name: guava
+  - name: gucharmap
+  - name: gucharmap-libs
+  - name: gvfs
+  - name: gvfs-client
+  - name: gzip
+  - name: hamcrest
+  - name: hardlink
+  - name: harfbuzz
+  - name: harfbuzz-devel
+  - name: harfbuzz-icu
+  - name: hdparm
+  - name: hesiod
+  - name: hicolor-icon-theme
+  - name: hmaccalc
+  - name: hostname
+  - name: hsqldb
+  - name: httpcomponents-client
+  - name: httpcomponents-core
+  - name: httpd
+  - name: httpd-devel
+  - name: httpd-tools
+  - name: http-parser
+  - name: hunspell
+  - name: hunspell-en-US
+  - name: hwdata
+  - name: hyphen
+  - name: ibus
+  - name: ibus-gtk2
+  - name: ibus-gtk3
+  - name: ibus-libs
+  - name: ibus-setup
+  - name: icedax
   # ima-evm-utils only in rhel-server distribution ISO
-  - ima-evm-utils
-  - imsettings
-  - imsettings-gsettings
-  - imsettings-libs
-  - imsettings-qt
-  - im-chooser
-  - im-chooser-common
-  - info
-  - iniparser
-  - initscripts
-  - iotop
-  - ipa-client
-  - ipa-client-common
-  - ipa-common
-  - ipa-server
-  - ipa-server-common
-  - ipa-server-dns
-  - ipa-server-trust-ad
-  - ipmitool
-  - iproute
-  - iprutils
-  - ipset
-  - ipset-libs
-  - iptables
-  - iptables-services
-  - iptstate
-  - iputils
-  - ipxe-roms-qemu
-  - irqbalance
-  - iscsi-initiator-utils
-  - iscsi-initiator-utils-iscsiuio
-  - isorelax
-  - iso-codes
-  - istack-commons
-  - ivtv-firmware
-  - iwl100-firmware
-  - iwl105-firmware
-  - iwl135-firmware
-  - iwl1000-firmware
-  - iwl2000-firmware
-  - iwl2030-firmware
-  - iwl3160-firmware
-  - iwl3945-firmware
-  - iwl4965-firmware
-  - iwl5000-firmware
-  - iwl5150-firmware
-  - iwl6000g2a-firmware
-  - iwl6000g2b-firmware
-  - iwl6000-firmware
-  - iwl6050-firmware
-  - iwl7260-firmware
-  - iwl7265-firmware
-  - jackson
-  - jakarta-commons-httpclient
-  - jakarta-oro
-  - jansson
-  - jasper-libs
-  - javamail
-  - javapackages-tools
-  - javassist
-  - java-1.6.0-openjdk
-  - java-1.6.0-openjdk-devel
-  - java-1.7.0-openjdk
-  - java-1.7.0-openjdk-devel
-  - java-1.7.0-openjdk-headless
-  - java-1.8.0-openjdk
-  - java-1.8.0-openjdk-headless
-  - jaxen
-  - jbigkit-libs
-  - jboss-annotations-1.1-api
-  - jdom
-  - jing
-  - jline
-  - joda-convert
-  - joda-time
-  - js
-  - json-c
-  - json-glib
-  - jsr-311
-  - jss
-  - junit
-  - jvnet-parent
-  - kabi-yum-plugins
-  - kbd
-  - kbd-legacy
-  - kbd-misc
-  - kde-filesystem
-  - kernel
-  - kernel-abi-whitelists
-  - kernel-headers
-  - kernel-tools
-  - kernel-tools-libs
-  - kexec-tools
-  - keyutils
-  - keyutils-libs
-  - keyutils-libs-devel
-  - kmod
-  - kmod-libs
-  - kpartx
-  - krb5-devel
-  - krb5-libs
-  - krb5-pkinit
-  - krb5-server
-  - krb5-server-ldap
-  - krb5-workstation
-  - lcms2
-  - ldapjdk
-  - ldns
-  - less
-  - lftp
-  - libICE
-  - libIDL
-  - libSM
-  - libX11
-  - libX11-common
-  - libX11-devel
-  - libXScrnSaver
-  - libXau
-  - libXau-devel
-  - libXaw
-  - libXcomposite
-  - libXcomposite-devel
-  - libXcursor
-  - libXcursor-devel
-  - libXdamage
-  - libXdamage-devel
-  - libXdmcp
-  - libXevie
-  - libXext
-  - libXext-devel
-  - libXfixes
-  - libXfixes-devel
-  - libXfont
-  - libXfont2
-  - libXft
-  - libXi
-  - libXinerama
-  - libXinerama-devel
-  - libXi-devel
-  - libXmu
-  - libXp
-  - libXpm
-  - libXpm-devel
-  - libXrandr
-  - libXrandr-devel
-  - libXrender
-  - libXrender-devel
-  - libXres
-  - libXt
-  - libXtst
-  - libXv
-  - libXvMC
-  - libXxf86dga
-  - libXxf86misc
-  - libXxf86vm
-  - libXxf86vm-devel
-  - libacl
-  - libaio
-  - libao
-  - libappstream-glib
-  - libarchive
-  - libart_lgpl
-  - libassuan
-  - libasyncns
-  - libatasmart
-  - libattr
-  - libavc1394
-  - libbasicobjects
-  - libblkid
-  - libblockdev
-  - libblockdev-crypto
-  - libblockdev-fs
-  - libblockdev-loop
-  - libblockdev-mdraid
-  - libblockdev-part
-  - libblockdev-swap
-  - libblockdev-utils
-  - libbluray
-  - libbonobo
-  - libbonoboui
-  - libburn
-  - libbytesize
-  - libcanberra
-  - libcanberra-gtk2
-  - libcanberra-gtk3
-  - libcap
-  - libcap-ng
-  - libcdio
-  - libcdio-paranoia
-  - libcgroup
-  - libcollection
-  - libcom_err
-  - libcom_err-devel
-  - libcroco
-  - libcurl
-  - libcurl-devel
-  - libdaemon
-  - libdb
-  - libdb-devel
-  - libdb-utils
-  - libdhash
-  - libdmx
-  - libdrm
-  - libdrm-devel
-  - libdv
-  - libdvdnav
-  - libdvdread
-  - libedit
-  - libepoxy
-  - liberation-fonts-common
-  - liberation-mono-fonts
-  - liberation-sans-fonts
-  - liberation-serif-fonts
-  - libestr
-  - libevdev
-  - libevent
-  - libexif
-  - libfastjson
-  - libffi
-  - libfontenc
-  - libfprint
-  - libgcab1
-  - libgcc
-  - libgcrypt
-  - libgdata
-  - libgee
-  - libglade2
-  - libglvnd
-  - libglvnd-egl
-  - libglvnd-gles
-  - libglvnd-glx
-  - libgnome
-  - libgnomecanvas
-  - libgnomekbd
-  - libgnomeui
-  - libgnome-keyring
-  - libgomp
-  - libgpg-error
-  - libgs
-  - libgsf
-  - libgtop2
-  - libgudev1
-  - libgusb
-  - libgweather
-  - libgxps
-  - libhugetlbfs
-  - libibverbs
-  - libical
-  - libicu
-  - libicu-devel
-  - libidn
-  - libiec61883
-  - libimobiledevice
-  - libini_config
-  - libinput
-  - libipa_hbac
-  - libiptcdata
-  - libisofs
-  - libitm
-  - libjpeg-turbo
-  - libjpeg-turbo-devel
-  - libkadm5
-  - libldb
-  - liblouis
-  - liblouis-python
-  - libmediaart
-  - libmng
-  - libmnl
-  - libmodman
-  - libmount
-  - libmpc
-  - libmpcdec
-  - libndp
-  - libnetfilter_conntrack
-  - libnfnetlink
-  - libnfsidmap
-  - libnl
-  - libnl3
-  - libnl3-cli
-  - libnma
-  - libnm-gtk
-  - libnotify
-  - liboauth
-  - libogg
-  - libosinfo
-  - libpaper
-  - libpath_utils
-  - libpcap
-  - libpciaccess
-  - libpipeline
-  - libplist
-  - libpng
-  - libpng12
-  - libpng-devel
-  - libproxy
-  - libpwquality
-  - libqb
-  - libquvi
-  - libquvi-scripts
-  - librados2
-  - libraw1394
-  - librdmacm
-  - libref_array
-  - libreport-filesystem
-  - libreswan
-  - librsvg2
-  - libsamplerate
-  - libseccomp
-  - libsecret
-  - libselinux
-  - libselinux-devel
-  - libselinux-python
-  - libselinux-utils
-  - libsemanage
-  - libsemanage-python
-  - libsepol
-  - libsepol-devel
-  - libshout
-  - libsmartcols
-  - libsmbclient
-  - libsndfile
-  - libsoup
-  - libsrtp
-  - libss
-  - libssh2
-  - libsss_autofs
-  - libsss_certmap
-  - libsss_idmap
-  - libsss_nss_idmap
-  - libsss_simpleifp
-  - libsss_sudo
-  - libstdc++
-  - libstdc++-devel
-  - libsysfs
-  - libtalloc
-  - libtasn1
-  - libtdb
-  - libteam
-  - libtevent
-  - libthai
-  - libtheora
-  - libtiff
-  - libtiff-devel
-  - libtirpc
-  - libtool-ltdl
-  - libudisks2
-  - libunistring
-  - libunwind
-  - libusal
-  - libusb
-  - libusbmuxd
-  - libusbx
-  - libuser
-  - libutempter
-  - libuuid
-  - libv4l
-  - libva
-  - libverto
-  - libverto-devel
-  - libverto-tevent
-  - libvirt-bash-completion
-  - libvirt-client
-  - libvirt-libs
-  - libvisual
-  - libvorbis
-  - libvpx
-  - libwacom
-  - libwacom-data
-  - libwayland-client
-  - libwayland-cursor
-  - libwayland-egl
-  - libwayland-server
-  - libwbclient
-  - libwebp
-  - libwmf
-  - libwmf-lite
-  - libwnck3
-  - libxcb
-  - libxcb-devel
-  - libxkbcommon
-  - libxkbcommon-x11
-  - libxkbfile
-  - libxklavier
-  - libxml2
-  - libxml2-devel
-  - libxml2-python
-  - libxshmfence
-  - libxslt
-  - libyaml
-  - libzip
-  - linuxconsoletools
-  - linux-firmware
-  - lksctp-tools
-  - llvm-private
-  - lm_sensors-libs
-  - log4cxx
-  - log4j
-  - logrotate
-  - logwatch
-  - lshw
-  - lsof
-  - lsscsi
-  - lua
-  - lvm2
-  - lvm2-libs
-  - lz4
-  - lzo
-  - m2crypto
-  - m4
-  - mailcap
-  - mailx
-  - make
-  - man-db
-  - man-pages
-  - mariadb-libs
-  - mcstrans
-  - mdadm
-  - mesa-dri-drivers
-  - mesa-filesystem
-  - mesa-libEGL
-  - mesa-libGL
-  - mesa-libGLES
-  - mesa-libGLU
-  - mesa-libgbm
-  - mesa-libglapi
-  - mesa-libxatracker
-  - mesa-private-llvm
-  - metacity
-  - microcode_ctl
-  - mlocate
-  - mobile-broadband-provider-info
-  - mod_auth_gssapi
-  - mod_lookup_identity
-  - mod_nss
-  - mod_session
-  - mod_ssl
-  - mod_wsgi
-  - mokutil
-  - mozilla-filesystem
-  - mozjs17
-  - mozjs24
-  - mozjs52
-  - mpfr
-  - msv-msv
-  - msv-xsdlib
-  - mtdev
-  - mtools
-  - mutt
-  - mutter
-  - nautilus
-  - nautilus-extensions
-  - ncurses
-  - ncurses-base
-  - ncurses-libs
-  - neon
-  - netcf-libs
-  - netlabel_tools
-  - netlabprelude-5.1.1-1.el7.x86_64.rpmbel_tools
-  - nettle
-  - net-snmp
-  - net-snmp-agent-libs
-  - net-snmp-libs
-  - net-snmp-utils
-  - net-tools
-  - newt
-  - newt-python
-  - nfs4-acl-tools
-  - nfs-utils
-  - nmap
-  - nmap-ncat
-  - nm-connection-editor
-  - nscd
-  - nspr
-  - nss
-  - nss-pam-ldapd
-  - nss-pem
-  - nss-softokn
-  - nss-softokn-freebl
-  - nss-sysinit
-  - nss-tools
-  - nss-util
-  - nss_compat_ossl
-  - ntp
-  - ntpdate
-  - numactl
-  - numactl-libs
-  - nuxwdog
-  - nuxwdog-client-java
-  - obexd
-  - objectweb-asm
-  - oddjob
-  - oddjob-mkhomedir
-  - opencryptoki
-  - opencryptoki-libs
-  - opencryptoki-swtok
-  - opendnssec
-  - openjade
-  - openjpeg2
-  - openjpeg-libs
-  - openldap
-  - openldap-clients
-  - openldap-devel
-  - openldap-servers
-  - openscap
-  - openscap-containers
-  - openscap-python
-  - openscap-scanner
-  - openscap-utils
-  - opensp
-  - openssh
-  - openssh-askpass
-  - openssh-clients
-  - openssh-server
-  - openssl
-  - openssl-devel
-  - openssl-libs
-  - open-sans-fonts
-  - opus
-  - orc
-  - orca
-  - osinfo-db
-  - osinfo-db-tools
-  - os-prober
-  - p11-kit
-  - p11-kit-trust
-  - pakchois
-  - pam
-  - pam_krb5
-  - pam_pkcs11
-  - pango
-  - parted
-  - passwd
-  - patch
-  - pax
-  - pciutils
-  - pciutils-libs
-  - pcre
-  - pcre2
-  - pcre-devel
-  - pcsc-lite
-  - pcsc-lite-ccid
-  - pcsc-lite-libs
-  - perl
-  - perl-Archive-Tar
-  - perl-Business-ISBN
-  - perl-Business-ISBN-Data
-  - perl-B-Lint
-  - perl-CGI
-  - perl-CPAN
-  - perl-Carp
-  - perl-Class-ISA
-  - perl-Class-Load
-  - perl-Class-Singleton
-  - perl-Compress-Raw-Bzip2
-  - perl-Compress-Raw-Zlib
-  - perl-DBD-MySQL
-  - perl-DBD-SQLite
-  - perl-DBI
-  - perl-DB_File
-  - perl-Data-Dumper
-  - perl-Data-OptList
-  - perl-DateTime
-  - perl-DateTime-Locale
-  - perl-DateTime-TimeZone
-  - perl-Date-Manip
-  - perl-Digest
-  - perl-Digest-MD5
-  - perl-Digest-SHA
-  - perl-Encode
-  - perl-Encode-Locale
-  - perl-Env
-  - perl-Error
-  - perl-Exporter
-  - perl-ExtUtils-Install
-  - perl-ExtUtils-MakeMaker
-  - perl-ExtUtils-Manifest
-  - perl-ExtUtils-ParseXS
-  - perl-FCGI
-  - perl-File-CheckTree
-  - perl-File-Listing
-  - perl-File-Path
-  - perl-File-Temp
-  - perl-Filter
-  - perl-Getopt-Long
-  - perl-Git
-  - perl-HTML-Parser
-  - perl-HTML-Tagset
-  - perl-HTTP-Cookies
-  - perl-HTTP-Daemon
-  - perl-HTTP-Date
-  - perl-HTTP-Message
-  - perl-HTTP-Negotiate
-  - perl-HTTP-Tiny
-  - perl-IO-Compress
-  - perl-IO-HTML
-  - perl-IO-Socket-IP
-  - perl-IO-Socket-SSL
-  - perl-IO-Zlib
-  - perl-LWP-MediaTypes
-  - perl-List-MoreUtils
-  - perl-Locale-Codes
-  - perl-Locale-Maketext
-  - perl-Module-Implementation
-  - perl-Module-Pluggable
-  - perl-Module-Runtime
-  - perl-Mozilla-CA
-  - perl-Mozilla-LDAP
-  - perl-NetAddr-IP
-  - perl-Net-Daemon
-  - perl-Net-HTTP
-  - perl-Net-LibIDN
-  - perl-Net-SSLeay
-  - perl-Package-Constants
-  - perl-Package-DeprecationManager
-  - perl-Package-Stash
-  - perl-Package-Stash-XS
-  - perl-Params-Util
-  - perl-Params-Validate
-  - perl-PathTools
-  - perl-PlRPC
-  - perl-Pod-Checker
-  - perl-Pod-Escapes
-  - perl-Pod-LaTeX
-  - perl-Pod-Parser
-  - perl-Pod-Perldoc
-  - perl-Pod-Plainer
-  - perl-Pod-Simple
-  - perl-Pod-Usage
-  - perl-SGMLSpm
-  - perl-Scalar-List-Utils
-  - perl-Socket
-  - perl-Storable
-  - perl-Sub-Install
-  - perl-Sys-CPU
-  - perl-Sys-MemInfo
-  - perl-Sys-Syslog
-  - perl-TermReadKey
-  - perl-Test-Harness
-  - perl-Test-Simple
-  - perl-Text-ParseWords
-  - perl-Text-Soundex
-  - perl-Text-Unidecode
-  - perl-Thread-Queue
-  - perl-TimeDate
-  - perl-Time-HiRes
-  - perl-Time-Local
-  - perl-Try-Tiny
-  - perl-URI
-  - perl-WWW-RobotRules
-  - perl-XML-LibXML
-  - perl-XML-NamespaceSupport
-  - perl-XML-Parser
-  - perl-XML-SAX
-  - perl-XML-SAX-Base
-  - perl-autodie
-  - perl-constant
-  - perl-devel
-  - perl-libs
-  - perl-libwww-perl
-  - perl-local-lib
-  - perl-macros
-  - perl-parent
-  - perl-podlators
-  - perl-srpm-macros
-  - perl-threads
-  - perl-threads-shared
-  - perl-version
-  - pexpect
-  - phonon
-  - phonon-backend-gstreamer
-  - php
-  - php-cli
-  - php-common
-  - php-gd
-  - php-xml
-  - pinentry
-  - pinentry-gtk
-  - pinfo
-  - pixman
-  - pkgconfig
-  - pki-base
-  - pki-base-java
-  - pki-ca
-  - pki-kra
-  - pki-server
-  - pki-tools
-  - plymouth
-  - plymouth-core-libs
-  - plymouth-scripts
-  - pm-utils
-  - policycoreutils
-  - policycoreutils-devel
-  - policycoreutils-newrole
-  - policycoreutils-python
-  - polkit
-  - polkit-pkla-compat
-  - polkit-qt
-  - poppler
-  - poppler-data
-  - poppler-glib
-  - poppler-utils
-  - popt
-  - popt-devel
-  - portreserve
-  - postfix
-  - postgresql
-  - postgresql-libs
-  - postgresql-server
-  - ppp
-  - procps-ng
-  - psacct
-  - psmisc
-  - pth
-  - pulseaudio
-  - pulseaudio-gdm-hooks
-  - pulseaudio-libs
-  - pulseaudio-libs-glib2
-  - pulseaudio-module-bluetooth
-  - pyOpenSSL
-  - pycairo
-  - pygobject2
-  - pygpgme
-  - pygtk2
-  - pyldb
-  - pyliblzma
-  - pyorbit
-  - pyparsing
-  - pytalloc
-  - python
+  - name: ima-evm-utils
+  - name: imsettings
+  - name: imsettings-gsettings
+  - name: imsettings-libs
+  - name: imsettings-qt
+  - name: im-chooser
+  - name: im-chooser-common
+  - name: info
+  - name: iniparser
+  - name: initscripts
+  - name: iotop
+  - name: ipa-client
+  - name: ipa-client-common
+  - name: ipa-common
+  - name: ipa-server
+  - name: ipa-server-common
+  - name: ipa-server-dns
+  - name: ipa-server-trust-ad
+  - name: ipmitool
+  - name: iproute
+  - name: iprutils
+  - name: ipset
+  - name: ipset-libs
+  - name: iptables
+  - name: iptables-services
+  - name: iptstate
+  - name: iputils
+  - name: ipxe-roms-qemu
+  - name: irqbalance
+  - name: iscsi-initiator-utils
+  - name: iscsi-initiator-utils-iscsiuio
+  - name: isorelax
+  - name: iso-codes
+  - name: istack-commons
+  - name: ivtv-firmware
+  - name: iwl100-firmware
+  - name: iwl105-firmware
+  - name: iwl135-firmware
+  - name: iwl1000-firmware
+  - name: iwl2000-firmware
+  - name: iwl2030-firmware
+  - name: iwl3160-firmware
+  - name: iwl3945-firmware
+  - name: iwl4965-firmware
+  - name: iwl5000-firmware
+  - name: iwl5150-firmware
+  - name: iwl6000g2a-firmware
+  - name: iwl6000g2b-firmware
+  - name: iwl6000-firmware
+  - name: iwl6050-firmware
+  - name: iwl7260-firmware
+  - name: iwl7265-firmware
+  - name: jackson
+  - name: jakarta-commons-httpclient
+  - name: jakarta-oro
+  - name: jansson
+  - name: jasper-libs
+  - name: javamail
+  - name: javapackages-tools
+  - name: javassist
+  - name: java-1.6.0-openjdk
+  - name: java-1.6.0-openjdk-devel
+  - name: java-1.7.0-openjdk
+  - name: java-1.7.0-openjdk-devel
+  - name: java-1.7.0-openjdk-headless
+  - name: java-1.8.0-openjdk
+  - name: java-1.8.0-openjdk-headless
+  - name: jaxen
+  - name: jbigkit-libs
+  - name: jboss-annotations-1.1-api
+  - name: jdom
+  - name: jing
+  - name: jline
+  - name: joda-convert
+  - name: joda-time
+  - name: js
+  - name: json-c
+  - name: json-glib
+  - name: jsr-311
+  - name: jss
+  - name: junit
+  - name: jvnet-parent
+  - name: kabi-yum-plugins
+  - name: kbd
+  - name: kbd-legacy
+  - name: kbd-misc
+  - name: kde-filesystem
+  - name: kernel
+  - name: kernel-abi-whitelists
+  - name: kernel-headers
+  - name: kernel-tools
+  - name: kernel-tools-libs
+  - name: kexec-tools
+  - name: keyutils
+  - name: keyutils-libs
+  - name: keyutils-libs-devel
+  - name: kmod
+  - name: kmod-libs
+  - name: kpartx
+  - name: krb5-devel
+  - name: krb5-libs
+  - name: krb5-pkinit
+  - name: krb5-server
+  - name: krb5-server-ldap
+  - name: krb5-workstation
+  - name: lcms2
+  - name: ldapjdk
+  - name: ldns
+  - name: less
+  - name: lftp
+  - name: libICE
+  - name: libIDL
+  - name: libSM
+  - name: libX11
+  - name: libX11-common
+  - name: libX11-devel
+  - name: libXScrnSaver
+  - name: libXau
+  - name: libXau-devel
+  - name: libXaw
+  - name: libXcomposite
+  - name: libXcomposite-devel
+  - name: libXcursor
+  - name: libXcursor-devel
+  - name: libXdamage
+  - name: libXdamage-devel
+  - name: libXdmcp
+  - name: libXevie
+  - name: libXext
+  - name: libXext-devel
+  - name: libXfixes
+  - name: libXfixes-devel
+  - name: libXfont
+  - name: libXfont2
+  - name: libXft
+  - name: libXi
+  - name: libXinerama
+  - name: libXinerama-devel
+  - name: libXi-devel
+  - name: libXmu
+  - name: libXp
+  - name: libXpm
+  - name: libXpm-devel
+  - name: libXrandr
+  - name: libXrandr-devel
+  - name: libXrender
+  - name: libXrender-devel
+  - name: libXres
+  - name: libXt
+  - name: libXtst
+  - name: libXv
+  - name: libXvMC
+  - name: libXxf86dga
+  - name: libXxf86misc
+  - name: libXxf86vm
+  - name: libXxf86vm-devel
+  - name: libacl
+  - name: libaio
+  - name: libao
+  - name: libappstream-glib
+  - name: libarchive
+  - name: libart_lgpl
+  - name: libassuan
+  - name: libasyncns
+  - name: libatasmart
+  - name: libattr
+  - name: libavc1394
+  - name: libbasicobjects
+  - name: libblkid
+  - name: libblockdev
+  - name: libblockdev-crypto
+  - name: libblockdev-fs
+  - name: libblockdev-loop
+  - name: libblockdev-mdraid
+  - name: libblockdev-part
+  - name: libblockdev-swap
+  - name: libblockdev-utils
+  - name: libbluray
+  - name: libbonobo
+  - name: libbonoboui
+  - name: libburn
+  - name: libbytesize
+  - name: libcanberra
+  - name: libcanberra-gtk2
+  - name: libcanberra-gtk3
+  - name: libcap
+  - name: libcap-ng
+  - name: libcdio
+  - name: libcdio-paranoia
+  - name: libcgroup
+  - name: libcollection
+  - name: libcom_err
+  - name: libcom_err-devel
+  - name: libcroco
+  - name: libcurl
+  - name: libcurl-devel
+  - name: libdaemon
+  - name: libdb
+  - name: libdb-devel
+  - name: libdb-utils
+  - name: libdhash
+  - name: libdmx
+  - name: libdrm
+  - name: libdrm-devel
+  - name: libdv
+  - name: libdvdnav
+  - name: libdvdread
+  - name: libedit
+  - name: libepoxy
+  - name: liberation-fonts-common
+  - name: liberation-mono-fonts
+  - name: liberation-sans-fonts
+  - name: liberation-serif-fonts
+  - name: libestr
+  - name: libevdev
+  - name: libevent
+  - name: libexif
+  - name: libfastjson
+  - name: libffi
+  - name: libfontenc
+  - name: libfprint
+  - name: libgcab1
+  - name: libgcc
+  - name: libgcrypt
+  - name: libgdata
+  - name: libgee
+  - name: libglade2
+  - name: libglvnd
+  - name: libglvnd-egl
+  - name: libglvnd-gles
+  - name: libglvnd-glx
+  - name: libgnome
+  - name: libgnomecanvas
+  - name: libgnomekbd
+  - name: libgnomeui
+  - name: libgnome-keyring
+  - name: libgomp
+  - name: libgpg-error
+  - name: libgs
+  - name: libgsf
+  - name: libgtop2
+  - name: libgudev1
+  - name: libgusb
+  - name: libgweather
+  - name: libgxps
+  - name: libhugetlbfs
+  - name: libibverbs
+  - name: libical
+  - name: libicu
+  - name: libicu-devel
+  - name: libidn
+  - name: libiec61883
+  - name: libimobiledevice
+  - name: libini_config
+  - name: libinput
+  - name: libipa_hbac
+  - name: libiptcdata
+  - name: libisofs
+  - name: libitm
+  - name: libjpeg-turbo
+  - name: libjpeg-turbo-devel
+  - name: libkadm5
+  - name: libldb
+  - name: liblouis
+  - name: liblouis-python
+  - name: libmediaart
+  - name: libmng
+  - name: libmnl
+  - name: libmodman
+  - name: libmount
+  - name: libmpc
+  - name: libmpcdec
+  - name: libndp
+  - name: libnetfilter_conntrack
+  - name: libnfnetlink
+  - name: libnfsidmap
+  - name: libnl
+  - name: libnl3
+  - name: libnl3-cli
+  - name: libnma
+  - name: libnm-gtk
+  - name: libnotify
+  - name: liboauth
+  - name: libogg
+  - name: libosinfo
+  - name: libpaper
+  - name: libpath_utils
+  - name: libpcap
+  - name: libpciaccess
+  - name: libpipeline
+  - name: libplist
+  - name: libpng
+  - name: libpng12
+  - name: libpng-devel
+  - name: libproxy
+  - name: libpwquality
+  - name: libqb
+  - name: libquvi
+  - name: libquvi-scripts
+  - name: librados2
+  - name: libraw1394
+  - name: librdmacm
+  - name: libref_array
+  - name: libreport-filesystem
+  - name: libreswan
+  - name: librsvg2
+  - name: libsamplerate
+  - name: libseccomp
+  - name: libsecret
+  - name: libselinux
+  - name: libselinux-devel
+  - name: libselinux-python
+  - name: libselinux-utils
+  - name: libsemanage
+  - name: libsemanage-python
+  - name: libsepol
+  - name: libsepol-devel
+  - name: libshout
+  - name: libsmartcols
+  - name: libsmbclient
+  - name: libsndfile
+  - name: libsoup
+  - name: libsrtp
+  - name: libss
+  - name: libssh2
+  - name: libsss_autofs
+  - name: libsss_certmap
+  - name: libsss_idmap
+  - name: libsss_nss_idmap
+  - name: libsss_simpleifp
+  - name: libsss_sudo
+  - name: libstdc++
+  - name: libstdc++-devel
+  - name: libsysfs
+  - name: libtalloc
+  - name: libtasn1
+  - name: libtdb
+  - name: libteam
+  - name: libtevent
+  - name: libthai
+  - name: libtheora
+  - name: libtiff
+  - name: libtiff-devel
+  - name: libtirpc
+  - name: libtool-ltdl
+  - name: libudisks2
+  - name: libunistring
+  - name: libunwind
+  - name: libusal
+  - name: libusb
+  - name: libusbmuxd
+  - name: libusbx
+  - name: libuser
+  - name: libutempter
+  - name: libuuid
+  - name: libv4l
+  - name: libva
+  - name: libverto
+  - name: libverto-devel
+  - name: libverto-tevent
+  - name: libvirt-bash-completion
+  - name: libvirt-client
+  - name: libvirt-libs
+  - name: libvisual
+  - name: libvorbis
+  - name: libvpx
+  - name: libwacom
+  - name: libwacom-data
+  - name: libwayland-client
+  - name: libwayland-cursor
+  - name: libwayland-egl
+  - name: libwayland-server
+  - name: libwbclient
+  - name: libwebp
+  - name: libwmf
+  - name: libwmf-lite
+  - name: libwnck3
+  - name: libxcb
+  - name: libxcb-devel
+  - name: libxkbcommon
+  - name: libxkbcommon-x11
+  - name: libxkbfile
+  - name: libxklavier
+  - name: libxml2
+  - name: libxml2-devel
+  - name: libxml2-python
+  - name: libxshmfence
+  - name: libxslt
+  - name: libyaml
+  - name: libzip
+  - name: linuxconsoletools
+  - name: linux-firmware
+  - name: lksctp-tools
+  - name: llvm-private
+  - name: lm_sensors-libs
+  - name: log4cxx
+  - name: log4j
+  - name: logrotate
+  - name: logwatch
+  - name: lshw
+  - name: lsof
+  - name: lsscsi
+  - name: lua
+  - name: lvm2
+  - name: lvm2-libs
+  - name: lz4
+  - name: lzo
+  - name: m2crypto
+  - name: m4
+  - name: mailcap
+  - name: mailx
+  - name: make
+  - name: man-db
+  - name: man-pages
+  - name: mariadb-libs
+  - name: mcstrans
+  - name: mdadm
+  - name: mesa-dri-drivers
+  - name: mesa-filesystem
+  - name: mesa-libEGL
+  - name: mesa-libGL
+  - name: mesa-libGLES
+  - name: mesa-libGLU
+  - name: mesa-libgbm
+  - name: mesa-libglapi
+  - name: mesa-libxatracker
+  - name: mesa-private-llvm
+  - name: metacity
+  - name: microcode_ctl
+  - name: mlocate
+  - name: mobile-broadband-provider-info
+  - name: mod_auth_gssapi
+  - name: mod_lookup_identity
+  - name: mod_nss
+  - name: mod_session
+  - name: mod_ssl
+  - name: mod_wsgi
+  - name: mokutil
+  - name: mozilla-filesystem
+  - name: mozjs17
+  - name: mozjs24
+  - name: mozjs52
+  - name: mpfr
+  - name: msv-msv
+  - name: msv-xsdlib
+  - name: mtdev
+  - name: mtools
+  - name: mutt
+  - name: mutter
+  - name: nautilus
+  - name: nautilus-extensions
+  - name: ncurses
+  - name: ncurses-base
+  - name: ncurses-libs
+  - name: neon
+  - name: netcf-libs
+  - name: netlabel_tools
+  - name: netlabprelude-5.1.1-1.el7.x86_64.rpmbel_tools
+  - name: nettle
+  - name: net-snmp
+  - name: net-snmp-agent-libs
+  - name: net-snmp-libs
+  - name: net-snmp-utils
+  - name: net-tools
+  - name: newt
+  - name: newt-python
+  - name: nfs4-acl-tools
+  - name: nfs-utils
+  - name: nmap
+  - name: nmap-ncat
+  - name: nm-connection-editor
+  - name: nscd
+  - name: nspr
+  - name: nss
+  - name: nss-pam-ldapd
+  - name: nss-pem
+  - name: nss-softokn
+  - name: nss-softokn-freebl
+  - name: nss-sysinit
+  - name: nss-tools
+  - name: nss-util
+  - name: nss_compat_ossl
+  - name: ntp
+  - name: ntpdate
+  - name: numactl
+  - name: numactl-libs
+  - name: nuxwdog
+  - name: nuxwdog-client-java
+  - name: obexd
+  - name: objectweb-asm
+  - name: oddjob
+  - name: oddjob-mkhomedir
+  - name: opencryptoki
+  - name: opencryptoki-libs
+  - name: opencryptoki-swtok
+  - name: opendnssec
+  - name: openjade
+  - name: openjpeg2
+  - name: openjpeg-libs
+  - name: openldap
+  - name: openldap-clients
+  - name: openldap-devel
+  - name: openldap-servers
+  - name: openscap
+  - name: openscap-containers
+  - name: openscap-python
+  - name: openscap-scanner
+  - name: openscap-utils
+  - name: opensp
+  - name: openssh
+  - name: openssh-askpass
+  - name: openssh-clients
+  - name: openssh-server
+  - name: openssl
+  - name: openssl-devel
+  - name: openssl-libs
+  - name: open-sans-fonts
+  - name: opus
+  - name: orc
+  - name: orca
+  - name: osinfo-db
+  - name: osinfo-db-tools
+  - name: os-prober
+  - name: p11-kit
+  - name: p11-kit-trust
+  - name: pakchois
+  - name: pam
+  - name: pam_krb5
+  - name: pam_pkcs11
+  - name: pango
+  - name: parted
+  - name: passwd
+  - name: patch
+  - name: pax
+  - name: pciutils
+  - name: pciutils-libs
+  - name: pcre
+  - name: pcre2
+  - name: pcre-devel
+  - name: pcsc-lite
+  - name: pcsc-lite-ccid
+  - name: pcsc-lite-libs
+  - name: perl
+  - name: perl-Archive-Tar
+  - name: perl-Business-ISBN
+  - name: perl-Business-ISBN-Data
+  - name: perl-B-Lint
+  - name: perl-CGI
+  - name: perl-CPAN
+  - name: perl-Carp
+  - name: perl-Class-ISA
+  - name: perl-Class-Load
+  - name: perl-Class-Singleton
+  - name: perl-Compress-Raw-Bzip2
+  - name: perl-Compress-Raw-Zlib
+  - name: perl-DBD-MySQL
+  - name: perl-DBD-SQLite
+  - name: perl-DBI
+  - name: perl-DB_File
+  - name: perl-Data-Dumper
+  - name: perl-Data-OptList
+  - name: perl-DateTime
+  - name: perl-DateTime-Locale
+  - name: perl-DateTime-TimeZone
+  - name: perl-Date-Manip
+  - name: perl-Digest
+  - name: perl-Digest-MD5
+  - name: perl-Digest-SHA
+  - name: perl-Encode
+  - name: perl-Encode-Locale
+  - name: perl-Env
+  - name: perl-Error
+  - name: perl-Exporter
+  - name: perl-ExtUtils-Install
+  - name: perl-ExtUtils-MakeMaker
+  - name: perl-ExtUtils-Manifest
+  - name: perl-ExtUtils-ParseXS
+  - name: perl-FCGI
+  - name: perl-File-CheckTree
+  - name: perl-File-Listing
+  - name: perl-File-Path
+  - name: perl-File-Temp
+  - name: perl-Filter
+  - name: perl-Getopt-Long
+  - name: perl-Git
+  - name: perl-HTML-Parser
+  - name: perl-HTML-Tagset
+  - name: perl-HTTP-Cookies
+  - name: perl-HTTP-Daemon
+  - name: perl-HTTP-Date
+  - name: perl-HTTP-Message
+  - name: perl-HTTP-Negotiate
+  - name: perl-HTTP-Tiny
+  - name: perl-IO-Compress
+  - name: perl-IO-HTML
+  - name: perl-IO-Socket-IP
+  - name: perl-IO-Socket-SSL
+  - name: perl-IO-Zlib
+  - name: perl-LWP-MediaTypes
+  - name: perl-List-MoreUtils
+  - name: perl-Locale-Codes
+  - name: perl-Locale-Maketext
+  - name: perl-Module-Implementation
+  - name: perl-Module-Pluggable
+  - name: perl-Module-Runtime
+  - name: perl-Mozilla-CA
+  - name: perl-Mozilla-LDAP
+  - name: perl-NetAddr-IP
+  - name: perl-Net-Daemon
+  - name: perl-Net-HTTP
+  - name: perl-Net-LibIDN
+  - name: perl-Net-SSLeay
+  - name: perl-Package-Constants
+  - name: perl-Package-DeprecationManager
+  - name: perl-Package-Stash
+  - name: perl-Package-Stash-XS
+  - name: perl-Params-Util
+  - name: perl-Params-Validate
+  - name: perl-PathTools
+  - name: perl-PlRPC
+  - name: perl-Pod-Checker
+  - name: perl-Pod-Escapes
+  - name: perl-Pod-LaTeX
+  - name: perl-Pod-Parser
+  - name: perl-Pod-Perldoc
+  - name: perl-Pod-Plainer
+  - name: perl-Pod-Simple
+  - name: perl-Pod-Usage
+  - name: perl-SGMLSpm
+  - name: perl-Scalar-List-Utils
+  - name: perl-Socket
+  - name: perl-Storable
+  - name: perl-Sub-Install
+  - name: perl-Sys-CPU
+  - name: perl-Sys-MemInfo
+  - name: perl-Sys-Syslog
+  - name: perl-TermReadKey
+  - name: perl-Test-Harness
+  - name: perl-Test-Simple
+  - name: perl-Text-ParseWords
+  - name: perl-Text-Soundex
+  - name: perl-Text-Unidecode
+  - name: perl-Thread-Queue
+  - name: perl-TimeDate
+  - name: perl-Time-HiRes
+  - name: perl-Time-Local
+  - name: perl-Try-Tiny
+  - name: perl-URI
+  - name: perl-WWW-RobotRules
+  - name: perl-XML-LibXML
+  - name: perl-XML-NamespaceSupport
+  - name: perl-XML-Parser
+  - name: perl-XML-SAX
+  - name: perl-XML-SAX-Base
+  - name: perl-autodie
+  - name: perl-constant
+  - name: perl-devel
+  - name: perl-libs
+  - name: perl-libwww-perl
+  - name: perl-local-lib
+  - name: perl-macros
+  - name: perl-parent
+  - name: perl-podlators
+  - name: perl-srpm-macros
+  - name: perl-threads
+  - name: perl-threads-shared
+  - name: perl-version
+  - name: pexpect
+  - name: phonon
+  - name: phonon-backend-gstreamer
+  - name: php
+  - name: php-cli
+  - name: php-common
+  - name: php-gd
+  - name: php-xml
+  - name: pinentry
+  - name: pinentry-gtk
+  - name: pinfo
+  - name: pixman
+  - name: pkgconfig
+  - name: pki-base
+  - name: pki-base-java
+  - name: pki-ca
+  - name: pki-kra
+  - name: pki-server
+  - name: pki-tools
+  - name: plymouth
+  - name: plymouth-core-libs
+  - name: plymouth-scripts
+  - name: pm-utils
+  - name: policycoreutils
+  - name: policycoreutils-devel
+  - name: policycoreutils-newrole
+  - name: policycoreutils-python
+  - name: polkit
+  - name: polkit-pkla-compat
+  - name: polkit-qt
+  - name: poppler
+  - name: poppler-data
+  - name: poppler-glib
+  - name: poppler-utils
+  - name: popt
+  - name: popt-devel
+  - name: portreserve
+  - name: postfix
+  - name: postgresql
+  - name: postgresql-libs
+  - name: postgresql-server
+  - name: ppp
+  - name: procps-ng
+  - name: psacct
+  - name: psmisc
+  - name: pth
+  - name: pulseaudio
+  - name: pulseaudio-gdm-hooks
+  - name: pulseaudio-libs
+  - name: pulseaudio-libs-glib2
+  - name: pulseaudio-module-bluetooth
+  - name: pyOpenSSL
+  - name: pycairo
+  - name: pygobject2
+  - name: pygpgme
+  - name: pygtk2
+  - name: pyldb
+  - name: pyliblzma
+  - name: pyorbit
+  - name: pyparsing
+  - name: pytalloc
+  - name: python
   # python2-caribou only in rhel-server distribution ISO
-  - python2-caribou
-  - python2-cryptography
-  - python2-futures
-  - python2-ipaclient
-  - python2-ipalib
-  - python2-ipaserver
-  - python2-oauthlib
-  - python2-pyasn1
-  - python2-pyasn1-modules
-  - python2-pyatspi
-  - python-IPy
-  - python-augeas
-  - python-backports
-  - python-backports-ssl_match_hostname
-  - python-brlapi
-  - python-cffi
-  - python-chardet
-  - python-configobj
-  - python-custodia
-  - python-dateutil
-  - python-decorator
-  - python-deltarpm
-  - python-dmidecode
-  - python-dns
-  - python-enum34
-  - python-ethtool
-  - python-firewall
-  - python-gobject
-  - python-gobject-base
-  - python-gssapi
-  - python-idna
-  - python-iniparse
-  - python-inotify
-  - python-ipaddress
-  - python-javapackages
-  - python-jwcrypto
-  - python-kdcproxy
-  - python-kitchen
-  - python-ldap
-  - python-libipa_hbac
-  - python-libs
-  - python-libsss_nss_idmap
-  - python-linux-procfs
-  - python-lxml
-  - python-magic
-  - python-memcached
-  - python-netaddr
-  - python-netifaces
-  - python-nss
-  - python-perf
-  - python-ply
-  - python-pycparser
-  - python-pycurl
-  - python-pyudev
-  - python-qrcode-core
-  - python-requests
+  - name: python2-caribou
+  - name: python2-cryptography
+  - name: python2-futures
+  - name: python2-ipaclient
+  - name: python2-ipalib
+  - name: python2-ipaserver
+  - name: python2-oauthlib
+  - name: python2-pyasn1
+  - name: python2-pyasn1-modules
+  - name: python2-pyatspi
+  - name: python-IPy
+  - name: python-augeas
+  - name: python-backports
+  - name: python-backports-ssl_match_hostname
+  - name: python-brlapi
+  - name: python-cffi
+  - name: python-chardet
+  - name: python-configobj
+  - name: python-custodia
+  - name: python-dateutil
+  - name: python-decorator
+  - name: python-deltarpm
+  - name: python-dmidecode
+  - name: python-dns
+  - name: python-enum34
+  - name: python-ethtool
+  - name: python-firewall
+  - name: python-gobject
+  - name: python-gobject-base
+  - name: python-gssapi
+  - name: python-idna
+  - name: python-iniparse
+  - name: python-inotify
+  - name: python-ipaddress
+  - name: python-javapackages
+  - name: python-jwcrypto
+  - name: python-kdcproxy
+  - name: python-kitchen
+  - name: python-ldap
+  - name: python-libipa_hbac
+  - name: python-libs
+  - name: python-libsss_nss_idmap
+  - name: python-linux-procfs
+  - name: python-lxml
+  - name: python-magic
+  - name: python-memcached
+  - name: python-netaddr
+  - name: python-netifaces
+  - name: python-nss
+  - name: python-perf
+  - name: python-ply
+  - name: python-pycparser
+  - name: python-pycurl
+  - name: python-pyudev
+  - name: python-qrcode-core
+  - name: python-requests
   # python-rhsm* only in rhel-server distribution ISO
-  - python-rhsm
-  - python-rhsm-certificates
-  - python-schedutils
-  - python-setuptools
-  - python-six
-  - python-slip
-  - python-slip-dbus
-  - python-srpm-macros
-  - python-sss
-  - python-sssdconfig
-  - python-sss-murmur
-  - python-suds
-  - python-syspurpose
-  - python-tdb
-  - python-tevent
-  - python-urlgrabber
-  - python-urllib3
-  - python-yubico
-  - pyusb
-  - pyxattr
-  - qdox
-  - qemu-guest-agent
-  - qpdf-libs
-  - qrencode-libs
-  - qt
-  - qt3
-  - qt-settings
-  - qt-x11
-  - quota
-  - quota-nls
-  - rarian
-  - rarian-compat
-  - rdma-core
-  - readline
-  - realmd
-  - recode
+  - name: python-rhsm
+  - name: python-rhsm-certificates
+  - name: python-schedutils
+  - name: python-setuptools
+  - name: python-six
+  - name: python-slip
+  - name: python-slip-dbus
+  - name: python-srpm-macros
+  - name: python-sss
+  - name: python-sssdconfig
+  - name: python-sss-murmur
+  - name: python-suds
+  - name: python-syspurpose
+  - name: python-tdb
+  - name: python-tevent
+  - name: python-urlgrabber
+  - name: python-urllib3
+  - name: python-yubico
+  - name: pyusb
+  - name: pyxattr
+  - name: qdox
+  - name: qemu-guest-agent
+  - name: qpdf-libs
+  - name: qrencode-libs
+  - name: qt
+  - name: qt3
+  - name: qt-settings
+  - name: qt-x11
+  - name: quota
+  - name: quota-nls
+  - name: rarian
+  - name: rarian-compat
+  - name: rdma-core
+  - name: readline
+  - name: realmd
+  - name: recode
   # redhat-indexhtml + redhat-logos only in rhel-server distribution ISO
-  - redhat-indexhtml
-  - redhat-logos
-  - redhat-lsb
-  - redhat-lsb-core
-  - redhat-lsb-cxx
-  - redhat-lsb-desktop
-  - redhat-lsb-languages
-  - redhat-lsb-printing
-  - redhat-lsb-submod-multimedia
-  - redhat-lsb-submod-security
-  - redhat-menus
+  - name: redhat-indexhtml
+  - name: redhat-logos
+  - name: redhat-lsb
+  - name: redhat-lsb-core
+  - name: redhat-lsb-cxx
+  - name: redhat-lsb-desktop
+  - name: redhat-lsb-languages
+  - name: redhat-lsb-printing
+  - name: redhat-lsb-submod-multimedia
+  - name: redhat-lsb-submod-security
+  - name: redhat-menus
   # redhat-release-server only in rhel-server distribution ISO
-  - redhat-release-server
-  - redhat-rpm-config
-  - regexp
-  - relaxngDatatype
+  - name: redhat-release-server
+  - name: redhat-rpm-config
+  - name: regexp
+  - name: relaxngDatatype
   # resource-agents only in CentOS distribution ISO
-  - resource-agents
-  - rest
-  - resteasy-base-atom-provider
-  - resteasy-base-client
-  - resteasy-base-jackson-provider
-  - resteasy-base-jaxb-provider
-  - resteasy-base-jaxrs
-  - resteasy-base-jaxrs-api
-  - rhino
-  - rngom
-  - rng-tools
-  - rootfiles
-  - rpcbind
-  - rpm
-  - rpmdevtools
-  - rpm-build
-  - rpm-build-libs
-  - rpm-devel
-  - rpm-libs
-  - rpm-python
-  - rrdtool
-  - rsync
-  - rsyslog
-  - rsyslog-gnutls
-  - rtkit
-  - ruby
-  - rubygems
-  - rubygem-bigdecimal
-  - rubygem-io-console
-  - rubygem-json
-  - rubygem-psych
-  - rubygem-rdoc
-  - ruby-irb
-  - ruby-libs
-  - samba
-  - samba-client
-  - samba-client-libs
-  - samba-common
-  - samba-common-libs
-  - samba-common-tools
-  - samba-libs
-  - samba-python
-  - samba-winbind
-  - samba-winbind-modules
-  - sbc
-  - scannotation
-  - scap-security-guide
-  - scap-workbench
-  - screen
-  - sed
-  - selinux-policy
-  - selinux-policy-devel
-  - selinux-policy-targeted
-  - setools-libs
-  - setserial
-  - setup
-  - sg3_utils
-  - sg3_utils-libs
-  - sgml-common
-  - shadow-utils
-  - shared-mime-info
-  - shim-x64
-  - slang
-  - slapi-nis
-  - slf4j
-  - smartmontools
-  - snappy
-  - softhsm
-  - sos
-  - soundtouch
-  - sound-theme-freedesktop
-  - sox
-  - spax
-  - speech-dispatcher
-  - speech-dispatcher-python
-  - speex
-  - sqlite
-  - sssd
-  - sssd-ad
-  - sssd-client
-  - sssd-common
-  - sssd-common-pac
-  - sssd-dbus
-  - sssd-ipa
-  - sssd-krb5
-  - sssd-krb5-common
-  - sssd-ldap
-  - sssd-proxy
-  - sssd-tools
-  - star
-  - startup-notification
-  - stax2-api
-  - stax-ex
-  - stunnel
-  - subscription-manager
-  - subscription-manager-rhsm
-  - subscription-manager-rhsm-certificates
-  - subversion
-  - subversion-libs
-  - sudo
-  - svrcore
-  - symlinks
-  - sysfsutils
-  - syslinux
-  - syslinux-tftpboot
-  - sysstat
-  - systemd
-  - systemd-libs
-  - systemd-python
-  - systemd-sysv
-  - systemtap-sdt-devel
-  - system-config-firewall-base
-  - sysvinit-tools
-  - t1lib
-  - taglib
-  - tar
-  - tboot
-  - tcl
-  - tcp_wrappers
-  - tcp_wrappers-libs
-  - tcsh
-  - teamd
-  - telepathy-filesystem
-  - telepathy-glib
-  - telepathy-logger
-  - telnet
-  - tftp-server
-  - tigervnc
-  - tigervnc-icons
-  - tigervnc-license
-  - tigervnc-server
-  - tigervnc-server-minimal
-  - time
-  - tk
-  - tmpwatch
-  - tncfhh
-  - tncfhh-libs
-  - tncfhh-utils
-  - tokyocabinet
-  - tomcat
-  - tomcatjss
-  - tomcat-el-2.2-api
-  - tomcat-jsp-2.2-api
-  - tomcat-lib
-  - tomcat-servlet-3.0-api
-  - totem-pl-parser
+  - name: resource-agents
+  - name: rest
+  - name: resteasy-base-atom-provider
+  - name: resteasy-base-client
+  - name: resteasy-base-jackson-provider
+  - name: resteasy-base-jaxb-provider
+  - name: resteasy-base-jaxrs
+  - name: resteasy-base-jaxrs-api
+  - name: rhino
+  - name: rngom
+  - name: rng-tools
+  - name: rootfiles
+  - name: rpcbind
+  - name: rpm
+  - name: rpmdevtools
+  - name: rpm-build
+  - name: rpm-build-libs
+  - name: rpm-devel
+  - name: rpm-libs
+  - name: rpm-python
+  - name: rrdtool
+  - name: rsync
+  - name: rsyslog
+  - name: rsyslog-gnutls
+  - name: rtkit
+  - name: ruby
+  - name: rubygems
+  - name: rubygem-bigdecimal
+  - name: rubygem-io-console
+  - name: rubygem-json
+  - name: rubygem-psych
+  - name: rubygem-rdoc
+  - name: ruby-irb
+  - name: ruby-libs
+  - name: samba
+  - name: samba-client
+  - name: samba-client-libs
+  - name: samba-common
+  - name: samba-common-libs
+  - name: samba-common-tools
+  - name: samba-libs
+  - name: samba-python
+  - name: samba-winbind
+  - name: samba-winbind-modules
+  - name: sbc
+  - name: scannotation
+  - name: scap-security-guide
+  - name: scap-workbench
+  - name: screen
+  - name: sed
+  - name: selinux-policy
+  - name: selinux-policy-devel
+  - name: selinux-policy-targeted
+  - name: setools-libs
+  - name: setserial
+  - name: setup
+  - name: sg3_utils
+  - name: sg3_utils-libs
+  - name: sgml-common
+  - name: shadow-utils
+  - name: shared-mime-info
+  - name: shim-x64
+  - name: slang
+  - name: slapi-nis
+  - name: slf4j
+  - name: smartmontools
+  - name: snappy
+  - name: softhsm
+  - name: sos
+  - name: soundtouch
+  - name: sound-theme-freedesktop
+  - name: sox
+  - name: spax
+  - name: speech-dispatcher
+  - name: speech-dispatcher-python
+  - name: speex
+  - name: sqlite
+  - name: sssd
+  - name: sssd-ad
+  - name: sssd-client
+  - name: sssd-common
+  - name: sssd-common-pac
+  - name: sssd-dbus
+  - name: sssd-ipa
+  - name: sssd-krb5
+  - name: sssd-krb5-common
+  - name: sssd-ldap
+  - name: sssd-proxy
+  - name: sssd-tools
+  - name: star
+  - name: startup-notification
+  - name: stax2-api
+  - name: stax-ex
+  - name: stunnel
+  - name: subscription-manager
+  - name: subscription-manager-rhsm
+  - name: subscription-manager-rhsm-certificates
+  - name: subversion
+  - name: subversion-libs
+  - name: sudo
+  - name: svrcore
+  - name: symlinks
+  - name: sysfsutils
+  - name: syslinux
+  - name: syslinux-tftpboot
+  - name: sysstat
+  - name: systemd
+  - name: systemd-libs
+  - name: systemd-python
+  - name: systemd-sysv
+  - name: systemtap-sdt-devel
+  - name: system-config-firewall-base
+  - name: sysvinit-tools
+  - name: t1lib
+  - name: taglib
+  - name: tar
+  - name: tboot
+  - name: tcl
+  - name: tcp_wrappers
+  - name: tcp_wrappers-libs
+  - name: tcsh
+  - name: teamd
+  - name: telepathy-filesystem
+  - name: telepathy-glib
+  - name: telepathy-logger
+  - name: telnet
+  - name: tftp-server
+  - name: tigervnc
+  - name: tigervnc-icons
+  - name: tigervnc-license
+  - name: tigervnc-server
+  - name: tigervnc-server-minimal
+  - name: time
+  - name: tk
+  - name: tmpwatch
+  - name: tncfhh
+  - name: tncfhh-libs
+  - name: tncfhh-utils
+  - name: tokyocabinet
+  - name: tomcat
+  - name: tomcatjss
+  - name: tomcat-el-2.2-api
+  - name: tomcat-jsp-2.2-api
+  - name: tomcat-lib
+  - name: tomcat-servlet-3.0-api
+  - name: totem-pl-parser
   # tpm2-* only in rhel-server distribution ISO
-  - tpm2-abrmd
-  - tpm2-tools
-  - tpm2-tss
-  - tpm2-tss-devel
-  - tpm-tools
-  - tracker
-  - tree
-  - trousers
-  - ttmkfdir
-  - tuned
-  - txw2
-  - tzdata
-  - tzdata-java
-  - ucs-miscfixed-fonts
-  - udftools
-  - udisks2
-  - unbound-libs
-  - unixODBC
-  - unzip
-  - upower
-  - urlview
-  - urw-base35-bookman-fonts
-  - urw-base35-c059-fonts
-  - urw-base35-d050000l-fonts
-  - urw-base35-fonts
-  - urw-base35-fonts-common
-  - urw-base35-gothic-fonts
-  - urw-base35-nimbus-mono-ps-fonts
-  - urw-base35-nimbus-roman-fonts
-  - urw-base35-nimbus-sans-fonts
-  - urw-base35-p052-fonts
-  - urw-base35-standard-symbols-ps-fonts
-  - urw-base35-z003-fonts
-  - usbmuxd
-  - usbutils
-  - usermode
-  - ustr
-  - util-linux
-  - velocity
-  - vim-common
-  - vim-enhanced
-  - vim-filesystem
-  - vim-minimal
-  - vino
-  - virt-what
-  - volume_key
-  - volume_key-libs
-  - vorbis-tools
-  - vsftpd
-  - vte3
-  - vte291
-  - vte-profile
-  - wavpack
-  - webkitgtk3
-  - webkitgtk4
-  - webkitgtk4-jsc
-  - webkitgtk4-plugin-process-gtk2
-  - webrtc-audio-processing
-  - wget
-  - which
-  - wodim
-  - words
-  - wpa_supplicant
-  - ws-jaxme
-  - x86info
-  - xalan-j2
-  - xcb-util
-  - xcb-util-image
-  - xcb-util-keysyms
-  - xcb-util-renderutil
-  - xcb-util-wm
-  - xdg-desktop-portal
-  - xdg-desktop-portal-gtk
-  - xdg-user-dirs
-  - xdg-user-dirs-gtk
-  - xdg-utils
-  - xerces-c
-  - xerces-j2
-  - xfsprogs
-  - xinetd
-  - xkeyboard-config
-  - xmlrpc-c
-  - xmlrpc-c-client
-  - xml-common
-  - xml-commons-apis
-  - xml-commons-resolver
-  - xorg-x11-apps
-  - xorg-x11-docs
-  - xorg-x11-drivers
-  - xorg-x11-drv-ati
-  - xorg-x11-drv-dummy
-  - xorg-x11-drv-evdev
-  - xorg-x11-drv-fbdev
-  - xorg-x11-drv-intel
-  - xorg-x11-drv-keyboard
-  - xorg-x11-drv-mouse
-  - xorg-x11-drv-nouveau
-  - xorg-x11-drv-openchrome
-  - xorg-x11-drv-qxl
-  - xorg-x11-drv-synaptics
-  - xorg-x11-drv-v4l
-  - xorg-x11-drv-vesa
-  - xorg-x11-drv-vmmouse
-  - xorg-x11-drv-vmware
-  - xorg-x11-drv-void
-  - xorg-x11-drv-wacom
-  - xorg-x11-fonts-75dpi
-  - xorg-x11-fonts-100dpi
-  - xorg-x11-fonts-ISO8859-1-75dpi
-  - xorg-x11-fonts-ISO8859-1-100dpi
-  - xorg-x11-fonts-Type1
-  - xorg-x11-fonts-misc
-  - xorg-x11-font-utils
-  - xorg-x11-proto-devel
-  - xorg-x11-server-Xephyr
-  - xorg-x11-server-Xorg
-  - xorg-x11-server-common
-  - xorg-x11-server-utils
-  - xorg-x11-utils
-  - xorg-x11-xauth
-  - xorg-x11-xinit
-  - xorg-x11-xkb-utils
-  - xpp3
-  - xsom
-  - xterm
-  - xulrunner
-  - xz
-  - xz-devel
-  - xz-libs
-  - yajl
-  - yelp
-  - yelp-libs
-  - yelp-xsl
-  - yum
-  - yum-metadata-parser
-  - yum-plugin-aliases
-  - yum-plugin-changelog
+  - name: tpm2-abrmd
+  - name: tpm2-tools
+  - name: tpm2-tss
+  - name: tpm2-tss-devel
+  - name: tpm-tools
+  - name: tracker
+  - name: tree
+  - name: trousers
+  - name: ttmkfdir
+  - name: tuned
+  - name: txw2
+  - name: tzdata
+  - name: tzdata-java
+  - name: ucs-miscfixed-fonts
+  - name: udftools
+  - name: udisks2
+  - name: unbound-libs
+  - name: unixODBC
+  - name: unzip
+  - name: upower
+  - name: urlview
+  - name: urw-base35-bookman-fonts
+  - name: urw-base35-c059-fonts
+  - name: urw-base35-d050000l-fonts
+  - name: urw-base35-fonts
+  - name: urw-base35-fonts-common
+  - name: urw-base35-gothic-fonts
+  - name: urw-base35-nimbus-mono-ps-fonts
+  - name: urw-base35-nimbus-roman-fonts
+  - name: urw-base35-nimbus-sans-fonts
+  - name: urw-base35-p052-fonts
+  - name: urw-base35-standard-symbols-ps-fonts
+  - name: urw-base35-z003-fonts
+  - name: usbmuxd
+  - name: usbutils
+  - name: usermode
+  - name: ustr
+  - name: util-linux
+  - name: velocity
+  - name: vim-common
+  - name: vim-enhanced
+  - name: vim-filesystem
+  - name: vim-minimal
+  - name: vino
+  - name: virt-what
+  - name: volume_key
+  - name: volume_key-libs
+  - name: vorbis-tools
+  - name: vsftpd
+  - name: vte3
+  - name: vte291
+  - name: vte-profile
+  - name: wavpack
+  - name: webkitgtk3
+  - name: webkitgtk4
+  - name: webkitgtk4-jsc
+  - name: webkitgtk4-plugin-process-gtk2
+  - name: webrtc-audio-processing
+  - name: wget
+  - name: which
+  - name: wodim
+  - name: words
+  - name: wpa_supplicant
+  - name: ws-jaxme
+  - name: x86info
+  - name: xalan-j2
+  - name: xcb-util
+  - name: xcb-util-image
+  - name: xcb-util-keysyms
+  - name: xcb-util-renderutil
+  - name: xcb-util-wm
+  - name: xdg-desktop-portal
+  - name: xdg-desktop-portal-gtk
+  - name: xdg-user-dirs
+  - name: xdg-user-dirs-gtk
+  - name: xdg-utils
+  - name: xerces-c
+  - name: xerces-j2
+  - name: xfsprogs
+  - name: xinetd
+  - name: xkeyboard-config
+  - name: xmlrpc-c
+  - name: xmlrpc-c-client
+  - name: xml-common
+  - name: xml-commons-apis
+  - name: xml-commons-resolver
+  - name: xorg-x11-apps
+  - name: xorg-x11-docs
+  - name: xorg-x11-drivers
+  - name: xorg-x11-drv-ati
+  - name: xorg-x11-drv-dummy
+  - name: xorg-x11-drv-evdev
+  - name: xorg-x11-drv-fbdev
+  - name: xorg-x11-drv-intel
+  - name: xorg-x11-drv-keyboard
+  - name: xorg-x11-drv-mouse
+  - name: xorg-x11-drv-nouveau
+  - name: xorg-x11-drv-openchrome
+  - name: xorg-x11-drv-qxl
+  - name: xorg-x11-drv-synaptics
+  - name: xorg-x11-drv-v4l
+  - name: xorg-x11-drv-vesa
+  - name: xorg-x11-drv-vmmouse
+  - name: xorg-x11-drv-vmware
+  - name: xorg-x11-drv-void
+  - name: xorg-x11-drv-wacom
+  - name: xorg-x11-fonts-75dpi
+  - name: xorg-x11-fonts-100dpi
+  - name: xorg-x11-fonts-ISO8859-1-75dpi
+  - name: xorg-x11-fonts-ISO8859-1-100dpi
+  - name: xorg-x11-fonts-Type1
+  - name: xorg-x11-fonts-misc
+  - name: xorg-x11-font-utils
+  - name: xorg-x11-proto-devel
+  - name: xorg-x11-server-Xephyr
+  - name: xorg-x11-server-Xorg
+  - name: xorg-x11-server-common
+  - name: xorg-x11-server-utils
+  - name: xorg-x11-utils
+  - name: xorg-x11-xauth
+  - name: xorg-x11-xinit
+  - name: xorg-x11-xkb-utils
+  - name: xpp3
+  - name: xsom
+  - name: xterm
+  - name: xulrunner
+  - name: xz
+  - name: xz-devel
+  - name: xz-libs
+  - name: yajl
+  - name: yelp
+  - name: yelp-libs
+  - name: yelp-xsl
+  - name: yum
+  - name: yum-metadata-parser
+  - name: yum-plugin-aliases
+  - name: yum-plugin-changelog
   # yum-plugin-fastestmirror only in CentOS distribution ISO
-  - yum-plugin-fastestmirror
-  - yum-plugin-tmprepo
-  - yum-plugin-verify
-  - yum-plugin-versionlock
-  - yum-utils
-  - zenity
-  - zip
-  - zlib
-  - zlib-devel
-pulp-el7-extras:
+  - name: yum-plugin-fastestmirror
+  - name: yum-plugin-tmprepo
+  - name: yum-plugin-verify
+  - name: yum-plugin-versionlock
+  - name: yum-utils
+  - name: zenity
+  - name: zip
+  - name: zlib
+  - name: zlib-devel
+pulp-extras:
   url: http://mirror.centos.org/centos/7/extras/x86_64/
   rpms:
-  - createrepo_c
-  - createrepo_c-libs
-  - libssh
-pulp-el7-epel:
+  - name: createrepo_c
+  - name: createrepo_c-libs
+  - name: libssh
+pulp-epel:
   url: https://dl.fedoraproject.org/pub/epel/7/x86_64/
   rpms:
-  - caja
-  - caja-extensions
-  - caja-extensions-common
-  - caja-open-terminal
-  - caja-schemas
-  - clamav
-  - clamav-data
-  - clamav-devel
-  - clamav-filesystem
-  - clamav-lib
-  - clamav-update
-  - clamd
-  - fortune-mod
-  - fuse-sshfs
-  - gtk-murrine-engine
-  - gtk2-engines
-  - haveged
-  - jq
-  - libNX_X11
-  - libXcomp
-  - libXcompshad
-  - libconfuse
-  - libev
-  - libmatekbd
-  - libmatemixer
-  - libmateweather
-  - libmateweather-data
-  - libprelude
-  - libwnck
-  - log4cplus
-  - lyx-fonts
-  - marco
-  - mate-control-center
-  - mate-control-center-filesystem
-  - mate-desktop
-  - mate-desktop-libs
-  - mate-icon-theme
-  - mate-menus
-  - mate-menus-libs
-  - mate-notification-daemon
-  - mate-panel
-  - mate-panel-libs
-  - mate-polkit
-  - mate-power-manager
-  - mate-screensaver
-  - mate-session-manager
-  - mate-settings-daemon
-  - mate-themes
-  - mate-user-guide
-  - nx-libs
-  - nxagent
-  - nxproxy
-  - oniguruma
-  - perl-File-BaseDir
-  - perl-X2Go-Log
-  - perl-X2Go-Server
-  - perl-X2Go-Server-DB
-  - pwgen
-  - python-linecache2
-  - re2
-  - rkhunter
-  - rubygem-highline
-  - rubygem-net-ldap
-  - rubygem-net-ldap-doc
-  - rubygem-rake-compiler
-  - unhide
-  - unique
-  - x2goagent
-  - x2goclient
-  - x2goserver
-  - x2goserver-common
-  - x2goserver-xsession
-pulp-el7-postgresql:
+  - name: caja
+  - name: caja-extensions
+  - name: caja-extensions-common
+  - name: caja-open-terminal
+  - name: caja-schemas
+  - name: clamav
+  - name: clamav-data
+  - name: clamav-devel
+  - name: clamav-filesystem
+  - name: clamav-lib
+  - name: clamav-update
+  - name: clamd
+  - name: fortune-mod
+  - name: fuse-sshfs
+  - name: gtk-murrine-engine
+  - name: gtk2-engines
+  - name: haveged
+  - name: jq
+  - name: libNX_X11
+  - name: libXcomp
+  - name: libXcompshad
+  - name: libconfuse
+  - name: libev
+  - name: libmatekbd
+  - name: libmatemixer
+  - name: libmateweather
+  - name: libmateweather-data
+  - name: libprelude
+  - name: libwnck
+  - name: log4cplus
+  - name: lyx-fonts
+  - name: marco
+  - name: mate-control-center
+  - name: mate-control-center-filesystem
+  - name: mate-desktop
+  - name: mate-desktop-libs
+  - name: mate-icon-theme
+  - name: mate-menus
+  - name: mate-menus-libs
+  - name: mate-notification-daemon
+  - name: mate-panel
+  - name: mate-panel-libs
+  - name: mate-polkit
+  - name: mate-power-manager
+  - name: mate-screensaver
+  - name: mate-session-manager
+  - name: mate-settings-daemon
+  - name: mate-themes
+  - name: mate-user-guide
+  - name: nx-libs
+  - name: nxagent
+  - name: nxproxy
+  - name: oniguruma
+  - name: perl-File-BaseDir
+  - name: perl-X2Go-Log
+  - name: perl-X2Go-Server
+  - name: perl-X2Go-Server-DB
+  - name: pwgen
+  - name: python-linecache2
+  - name: re2
+  - name: rkhunter
+  - name: rubygem-highline
+  - name: rubygem-net-ldap
+  - name: rubygem-net-ldap-doc
+  - name: rubygem-rake-compiler
+  - name: unhide
+  - name: unique
+  - name: x2goagent
+  - name: x2goclient
+  - name: x2goserver
+  - name: x2goserver-common
+  - name: x2goserver-xsession
+pulp-postgresql:
   url: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/
   rpms:
-  - postgresql96
-  - postgresql96-contrib
-  - postgresql96-libs
-  - postgresql96-server
-pulp-el7-simp:
+  - name: postgresql96
+  - name: postgresql96-contrib
+  - name: postgresql96-libs
+  - name: postgresql96-server
+pulp-simp:
   url: https://download.simp-project.com/SIMP/yum/releases/latest/el/7Server/x86_64/simp/
   rpms:
-  - HIRS_Provisioner_TPM_1_2
-  - HIRS_Provisioner_TPM_2_0
-  - chkrootkit
-  - paccor
-  - ruby-ldap
-  - simp-lastbind
-  - simp-ppolicy-check-password
-  - simp-tpm12-simulator
-  - simp-tpm2-simulator
-  - simp-vendored-r10k
-  - simp-vendored-r10k-doc
-  - simp-vendored-r10k-gem-colored
-  - simp-vendored-r10k-gem-cri
-  - simp-vendored-r10k-gem-faraday
-  - simp-vendored-r10k-gem-faraday_middleware
-  - simp-vendored-r10k-gem-fast_gettext
-  - simp-vendored-r10k-gem-gettext
-  - simp-vendored-r10k-gem-gettext-setup
-  - simp-vendored-r10k-gem-locale
-  - simp-vendored-r10k-gem-log4r
-  - simp-vendored-r10k-gem-minitar
-  - simp-vendored-r10k-gem-multi_json
-  - simp-vendored-r10k-gem-multipart-post
-  - simp-vendored-r10k-gem-puppet_forge
-  - simp-vendored-r10k-gem-r10k
-  - simp-vendored-r10k-gem-semantic_puppet
-  - simp-vendored-r10k-gem-text
-  - sudosh2
-  - tlog
-  - tpm_module
+  - name: HIRS_Provisioner_TPM_1_2
+  - name: HIRS_Provisioner_TPM_2_0
+  - name: chkrootkit
+  - name: paccor
+  - name: ruby-ldap
+  - name: simp-lastbind
+  - name: simp-ppolicy-check-password
+  - name: simp-tpm12-simulator
+  - name: simp-tpm2-simulator
+  - name: simp-vendored-r10k
+  - name: simp-vendored-r10k-doc
+  - name: simp-vendored-r10k-gem-colored
+  - name: simp-vendored-r10k-gem-cri
+  - name: simp-vendored-r10k-gem-faraday
+  - name: simp-vendored-r10k-gem-faraday_middleware
+  - name: simp-vendored-r10k-gem-fast_gettext
+  - name: simp-vendored-r10k-gem-gettext
+  - name: simp-vendored-r10k-gem-gettext-setup
+  - name: simp-vendored-r10k-gem-locale
+  - name: simp-vendored-r10k-gem-log4r
+  - name: simp-vendored-r10k-gem-minitar
+  - name: simp-vendored-r10k-gem-multi_json
+  - name: simp-vendored-r10k-gem-multipart-post
+  - name: simp-vendored-r10k-gem-puppet_forge
+  - name: simp-vendored-r10k-gem-r10k
+  - name: simp-vendored-r10k-gem-semantic_puppet
+  - name: simp-vendored-r10k-gem-text
+  - name: sudosh2
+  - name: tlog
+  - name: tpm_module
+  # Missing from first cut
+  - name: pupmod-aboe-chrony
+  - name: pupmod-camptocamp-kmod
+  - name: pupmod-camptocamp-systemd
+  - name: pupmod-herculesteam-augeasproviders_core
+  - name: pupmod-herculesteam-augeasproviders_grub
+  - name: pupmod-herculesteam-augeasproviders_ssh
+  - name: pupmod-herculesteam-augeasproviders_sysctl
+  - name: pupmod-onyxpoint-gpasswd
+  - name: pupmod-puppet-firewalld
+  - name: pupmod-puppet-gitlab
+  - name: pupmod-puppetlabs-apache
+  - name: pupmod-puppetlabs-concat
+  - name: pupmod-puppetlabs-hocon
+  - name: pupmod-puppetlabs-inifile
+  - name: pupmod-puppetlabs-java
+  - name: pupmod-puppetlabs-motd
+  - name: pupmod-puppetlabs-mysql
+  - name: pupmod-puppetlabs-postgresql
+  - name: pupmod-puppetlabs-puppet_authorization
+  - name: pupmod-puppetlabs-puppetdb
+  - name: pupmod-puppetlabs-ruby_task_helper
+  - name: pupmod-puppetlabs-stdlib
+  - name: pupmod-puppetlabs-translate
+  - name: pupmod-puppet-posix_acl
+  - name: pupmod-puppet-snmp
+  - name: pupmod-puppet-yum
+  - name: pupmod-saz-locales
+  - name: pupmod-saz-timezone
+  - name: pupmod-simp-acpid
+  - name: pupmod-simp-aide
+  - name: pupmod-simp-at
+  - name: pupmod-simp-auditd
+  - name: pupmod-simp-autofs
+  - name: pupmod-simp-chkrootkit
+  - name: pupmod-simp-clamav
+  - name: pupmod-simp-compliance_markup
+  - name: pupmod-simp-cron
+  - name: pupmod-simp-crypto_policy
+  - name: pupmod-simp-dconf
+  - name: pupmod-simp-deferred_resources
+  - name: pupmod-simp-dhcp
+  - name: pupmod-simp-fips
+  - name: pupmod-simp-freeradius
+  - name: pupmod-simp-gdm
+  - name: pupmod-simp-gnome
+  - name: pupmod-simp-haveged
+  - name: pupmod-simp-hirs_provisioner
+  - name: pupmod-simp-ima
+  - name: pupmod-simp-incron
+  - name: pupmod-simp-iptables
+  - name: pupmod-simp-issue
+  - name: pupmod-simp-krb5
+  - name: pupmod-simp-libreswan
+  - name: pupmod-simp-libvirt
+  - name: pupmod-simp-logrotate
+  - name: pupmod-simp-mate
+  - name: pupmod-simp-mozilla
+  - name: pupmod-simp-named
+  - name: pupmod-simp-network
+  - name: pupmod-simp-nfs
+  - name: pupmod-simp-ntpd
+  - name: pupmod-simp-oath
+  - name: pupmod-simp-oddjob
+  - name: pupmod-simp-openscap
+  - name: pupmod-simp-pam
+  - name: pupmod-simp-pki
+  - name: pupmod-simp-polkit
+  - name: pupmod-simp-postfix
+  - name: pupmod-simp-pupmod
+  - name: pupmod-simp-resolv
+  - name: pupmod-simp-rkhunter
+  - name: pupmod-simp-rsync
+  - name: pupmod-simp-rsyslog
+  - name: pupmod-simp-selinux
+  - name: pupmod-simp-simp
+  - name: pupmod-simp-simp_apache
+  - name: pupmod-simp-simp_banners
+  - name: pupmod-simp-simp_bolt
+  - name: pupmod-simp-simp_firewalld
+  - name: pupmod-simp-simp_gitlab
+  - name: pupmod-simp-simp_grub
+  - name: pupmod-simp-simp_ipa
+  - name: pupmod-simp-simpkv
+  - name: pupmod-simp-simplib
+  - name: pupmod-simp-simp_nfs
+  - name: pupmod-simp-simp_openldap
+  - name: pupmod-simp-simp_options
+  - name: pupmod-simp-simp_pki_service
+  - name: pupmod-simp-simp_rsyslog
+  - name: pupmod-simp-simp_snmpd
+  - name: pupmod-simp-ssh
+  - name: pupmod-simp-sssd
+  - name: pupmod-simp-stunnel
+  - name: pupmod-simp-sudo
+  - name: pupmod-simp-sudosh
+  - name: pupmod-simp-svckill
+  - name: pupmod-simp-swap
+  - name: pupmod-simp-tcpwrappers
+  - name: pupmod-simp-tftpboot
+  - name: pupmod-simp-tlog
+  - name: pupmod-simp-tpm
+  - name: pupmod-simp-tpm2
+  - name: pupmod-simp-tuned
+  - name: pupmod-simp-upstart
+  - name: pupmod-simp-useradd
+  - name: pupmod-simp-vnc
+  - name: pupmod-simp-vox_selinux
+  - name: pupmod-simp-vsftpd
+  - name: pupmod-simp-x2go
+  - name: pupmod-simp-xinetd
+  - name: pupmod-treydock-kdump
+  - name: pupmod-trlinkin-nsswitch
+  - name: rubygem-simp-cli
+  - name: rubygem-simp-cli-doc
+  - name: rubygem-simp-cli-highline
+  - name: simp
+  - name: simp-adapter
+  - name: simp-doc
+  - name: simp-environment-skeleton
+  - name: simp-extras
+  - name: simp-gpgkeys
+  - name: simp-rsync
+  - name: simp-rsync-skeleton
+  - name: simp-selinux-policy
+  - name: simp-utils
+### webkitgtk4-plugin-process-gtk2-2.22.7-2.el7.x86_64.rpm

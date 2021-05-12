@@ -109,17 +109,21 @@ class Pulp3RpmMirrorSlimmer
     repos_data
   end
 
-  def create_rpm_repo_mirror(name:, remote_url:, repo:, proxy_url: nil, pulp_labels: {})
+  def create_rpm_repo_mirror(name:, remote_url:, repo:, mirror_options: {}, pulp_labels: {})
     # create remote
     warn "-- creating remote #{name} from #{remote_url}"
 
+    remote_opts = {
+      'name' => name,
+      'url' => remote_url,
+      'policy' => 'on_demand',
+      #'pulp_labels' => pulp_labels,
+      #'tls_validation' => false,
+    }.merge( mirror_options )
+
     begin
       rpm_rpm_remote = PulpRpmClient::RpmRpmRemote.new(
-        name: name,
-        url: remote_url,
-        policy: 'on_demand', # policy: 'immediate',
-        proxy_url: proxy_url,
-        tls_validation: false
+        remote_opts.transform_keys(&:to_sym)
       )
 
       remotes_data = @RemotesAPI.create(rpm_rpm_remote)
@@ -313,32 +317,99 @@ class Pulp3RpmMirrorSlimmer
     @RepoVersionsAPI.read(publication.repository_version)
   end
 
-  def get_rpm_hrefs(repo_version_href, rpms)
+  # We need a pulp href for each RPM, but Pulp's API returns every version for
+  # a name.  We only want a a single RPM for each name:
+  #
+  #   - The best version (NEVRA) available
+  #   - There may be contraints for particular packages (particular/max version)
+  #     - (in which case: pick the best of what's left)
+  #   - Assumptions:
+  #     - If <name>.x86_64 exists, we don't also want <name>.i686
+  #     - Not sure about <name>.x86_64 & <name>.noarch (does this happen?)
+  def get_rpm_hrefs(repo_version_href, rpm_reqs)
     limit = 100
     rpm_batch_size = limit
+    api_results = []
     results = []
-    rpms.each_slice(rpm_batch_size).to_a.each do |rpm_names|
+
+    # The API can only look for so many RPMs at a time, so query in batches
+    api_result_count = nil
+    rpm_reqs.each_slice(rpm_batch_size).to_a.each do |slice_of_rpms|
+      rpm_names = slice_of_rpms.map{|r| r['name']}
       offset = 0
       next_url = nil
+
       until offset > 0 && next_url.nil? do
-        warn("Asking for #{rpm_names.size} RPM names (#{rpm_names.hash}) (offset: #{offset}), total results: #{results.size})")
+        warn(
+          "Asking for #{rpm_names.size} RPM names (#{rpm_names.hash}) " + \
+          "offset: #{offset}#{api_result_count ? ", total considered: #{api_results.size}/#{api_result_count}" : ''})"
+        )
+
         paginated_package_response_list = @ContentPackageAPI.list({
           name__in: rpm_names,
           repository_version: repo_version_href,
           # TODO is this reasonable?
-          arch__in: ['noarch','x86_64'],
+          arch__in: ['noarch','x86_64','i686'],
           fields: 'epoch,name,version,release,arch,pulp_href,location_href',
           limit: limit,
           offset: offset,
+          order: 'version',
         })
-        results += paginated_package_response_list.results
+        api_results += paginated_package_response_list.results
         offset += paginated_package_response_list.results.size
         next_url = paginated_package_response_list._next
+        api_result_count ||= paginated_package_response_list.count
       end
     end
 
-    # Check that we found all rpms
-    missing_names = rpms.uniq - results.map(&:name).uniq
+    api_results.map(&:name).uniq.each do |rpm_name|
+      rpm_req = rpm_reqs.select{|r| r['name'] == rpm_name }.first
+      n_rpms = api_results.select{|r| r.name == rpm_name }
+      n_results = []
+
+      # filter candidates based on constraints
+      if rpm_req['version']
+        size = n_rpms.size
+        n_rpms.select! do |r|
+          # TODO: logic to compare release and epoch
+          Gem::Dependency.new('', rpm_req['version']).match?('', Gem::Version.new(r.version))
+        end
+        # fail/warn when no RPMs meet constraints
+        raise "ERROR: No '#{rpm_name}' RPMs met the version constraint: '#{rpm_req['version']}' (#{size} considered)" if n_rpms.empty?
+      end
+
+      # find the best RPM for each arch
+      n_rpms.map{|r| r.arch }.uniq.each do |arch|
+        na_rpms = n_rpms.select{|r| r.arch == arch }
+
+        # pick the best version (NEVR) for each arc
+        nevr_rpms = na_rpms.sort do |a,b|
+          next(a.epoch <=> b.epoch) unless ((a.epoch <=> b.epoch) == 0)
+          next(a.version <=> b.version) unless ((a.version <=> b.version) == 0)
+          a.release <=> b.release
+        end
+        n_results << nevr_rpms.last
+      end
+
+      # remove `<name>.i686` unless there is no `<name>.x86_64`
+      if n_results.any?{|x| x.arch == 'i686' } && n_results.any?{|x| x.arch == 'x86_64' }
+        warn "WARNING: Ignoring #{rpm_name}.i686 because #{rpm_name}.x86_64 exists"
+        n_results.reject!{|x| x.arch == 'i686' }
+      end
+
+      # This is still a weird case, so investigate it until we know what to expect
+      if n_results.size > 1
+        warn "WARNING: RPMs for muliple arches found for '#{rpm_name}': #{n_results.map{|r| r.arch }.uniq.join(', ')}"
+        sleep 1
+        puts "Investigate this!"
+        require 'pry'; binding.pry
+      end
+
+      results = n_results + results
+    end
+
+    # Check that we found all rpm_reqs
+    missing_names = rpm_reqs.map{|r| r['name']}.uniq - results.map(&:name).uniq
     unless missing_names.empty?
       warn "WARNING: Missing #{missing_names.size} requested RPMs:\n  - #{missing_names.join("\n  - ")}\n\n"
       # FIXME TODO log this/return the missing RPMs
@@ -379,21 +450,24 @@ class Pulp3RpmMirrorSlimmer
     end
   end
 
-  def do_create_new(repos_to_mirror)
-    # TODO: Safety check to only destroy repos if pulp labels are identical?
-    pulp_labels = @pulp_labels.merge({ 'reporole' => 'remote_mirror' })
-
+  def delete_rpm_repo_mirrors(repos_to_mirror)
     repos_to_mirror.each do |name, data|
       delete_rpm_repo_mirror(name)
       delete_rpm_repo_mirror(name.sub(/^pulp\b/, @build_name))
     end
+  end
+
+  def do_create_new(repos_to_mirror)
+    # TODO: Safety check to only destroy repos if pulp labels are identical?
+    pulp_labels = @pulp_labels.merge({ 'reporole' => 'remote_mirror' })
+
     repos_to_mirror.each do |name, data|
       repo = ensure_rpm_repo(name, pulp_labels)
       rpm_rpm_repository_version_href = create_rpm_repo_mirror(
         name: name,
         remote_url: data['url'],
         repo: repo,
-        proxy_url: data['proxy_url'] || nil,
+        mirror_options: data['mirror_options'] || {},
         pulp_labels: pulp_labels
       )
 require 'pry'; binding.pry unless rpm_rpm_repository_version_href
@@ -484,6 +558,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     repos_to_mirror = YAML.load_file(repos_to_mirror_file)
 
     if action == :create_new
+      delete_rpm_repo_mirrors(repos_to_mirror)
       do_create_new(repos_to_mirror)
     elsif action == :use_existing
       do_use_existing(repos_to_mirror)
@@ -491,68 +566,116 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
   end
 end
 
-require 'optparse'
+def parse_options
+  require 'optparse'
 
-options = {
-  action: :use_existing,
-  repos_to_mirror_file: nil,
-  # FIXME: change/require?
-  pulp_label_session: 'testbuild-6.6.0',
-  pulp_user: 'admin',
-  pulp_password: 'admin',
-}
+  options = {
+    action: :use_existing,
+    repos_to_mirror_file: nil,
+    # FIXME: change/require?
+    pulp_label_session: 'testbuild-6.6.0',
+    pulp_user: 'admin',
+    pulp_password: 'admin',
+  }
 
-OptsFilepath = String
-OptsYAMLFilepath = Hash
-opts_parser = OptionParser.new do |opts|
-  opts.banner = 'Usage: do.rb [options]'
+  OptsFilepath = String
+  OptsYAMLFilepath = Hash
+  opts_parser = OptionParser.new do |opts|
+    opts.banner = 'Usage: do.rb [options]'
 
-  opts.accept(OptsYAMLFilepath) do |path|
-    File.exist?(path) || fail("Could not find specified file: '#{path}'")
-    File.file?(path) || fail("Argument is not a file: '#{path}'")
-    YAML.parse_file(path) # fails if not valid YAML
-    path
+    opts.accept(OptsYAMLFilepath) do |path|
+      File.exist?(path) || fail("Could not find specified file: '#{path}'")
+      File.file?(path) || fail("Argument is not a file: '#{path}'")
+      YAML.parse_file(path) # fails if not valid YAML
+      path
+    end
+
+    opts.on(
+      '-f', '--repos-rpms-file YAML_FILE', OptsYAMLFilepath,
+      "YAML File with Repos/RPMs to include (#{options[:repos_to_mirror_file]})"
+    ) do |f|
+      options[:repos_to_mirror_file] = f
+    end
+
+    opts.on('-n', '--create-new', 'Delete existing + Create new repo mirrors') do |_v|
+      options[:action] = :create_new
+    end
+
+    opts.on('-e', '--use-existing', 'Use existing repo mirrors') do |_v|
+      options[:action] = :use_existing
+    end
+
+    opts.on(
+      '-l', '--session-label LABEL',
+      "Text for 'simpbuild' label on pulp entities ('#{options[:pulp_label_session]}')"
+    ) do |text|
+      options[:pulp_label_session] = text
+    end
+
+    opts.on('-v', '--[no-]verbose', 'Run verbosely') do |v|
+      options[:verbose] = v
+    end
+  end
+  opts_parser.parse!
+
+  unless options[:repos_to_mirror_file]
+    warn '', 'ERROR: missing `--repos-rpms-file YAML_FILE` !', ''
+    puts opts_parser.help
+    exit 1
   end
 
-  opts.on(
-    '-f', '--repos-rpms-file YAML_FILE', OptsYAMLFilepath,
-    "YAML File with Repos/RPMs to include (#{options[:repos_to_mirror_file]})"
-  ) do |f|
-    options[:repos_to_mirror_file] = f
+  unless options[:repos_to_mirror_file]
+    warn '', 'ERROR: missing `--repos-rpms-file YAML_FILE` !', ''
+    puts opts_parser.help
+    exit 1
   end
 
-  opts.on('-n', '--create-new', 'Delete existing + Create new repo mirrors') do |_v|
-    options[:action] = :create_new
-  end
-
-  opts.on('-e', '--use-existing', 'Use existing repo mirrors') do |_v|
-    options[:action] = :use_existing
-  end
-
-  opts.on(
-    '-l', '--session-label LABEL',
-    "Text for 'simpbuild' label on pulp entities ('#{options[:pulp_label_session]}')"
-  ) do |text|
-    options[:pulp_label_session] = text
-  end
-
-  opts.on('-v', '--[no-]verbose', 'Run verbosely') do |v|
-    options[:verbose] = v
-  end
+  optparse
 end
-opts_parser.parse!
 
-unless options[:repos_to_mirror_file]
-  warn '', 'ERROR: missing `--repos-rpms-file YAML_FILE` !', ''
-  puts opts_parser.help
-  exit 1
+def get_logger(log_file: 'rpm_mirror_slimmer.log')
+  # Default logger
+  Logging.init :debug, :verbose, :info, :happy, :warn, :success, :error, :recovery, :fatal
+
+  # here we setup a color scheme called 'bright'
+  Logging.color_scheme(
+    'bright',
+    lines: {
+      debug: :blue,
+      verbose: :blue,
+      info: :cyan,
+      happy: :magenta,
+      warn: :yellow,
+      success: :green,
+      recovery: %i[black on_green],
+      error: :red,
+      fatal: %i[white on_red]
+    },
+    date: :gray,
+    logger: :cyan,
+    message: :magenta
+  )
+
+  Logging.appenders.stdout(
+    'stdout',
+    layout: Logging.layouts.pattern(
+      #          :pattern => '[%d] %-5l %c: %m\n',
+      color_scheme: 'bright' # bright
+    )
+  )
+
+  log = Logging.logger[Pulp3RpmMirrorSlimmer]
+  log.add_appenders(
+    Logging.appenders.stdout,
+    Logging.appenders.file('log_file', level: :recovery),
+    Logging.appenders.file('log_file', level: :error),
+    Logging.appenders.file('log_file', level: :fatal)
+  )
+  log.level = :info
+  log
 end
 
-unless options[:repos_to_mirror_file]
-  warn '', 'ERROR: missing `--repos-rpms-file YAML_FILE` !', ''
-  puts opts_parser.help
-  exit 1
-end
+options = parse_options
 puts options.to_yaml
 p ARGV
 
@@ -560,6 +683,7 @@ mirror_slimmer = Pulp3RpmMirrorSlimmer.new(
   build_name: options[:pulp_label_session],
   pulp_user:     options[:pulp_user],
   pulp_password: options[:pulp_password],
+  logger: get_logger('rpm_mirror_slimmer.log')
 )
 mirror_slimmer.do(
   action:               options[:action],
