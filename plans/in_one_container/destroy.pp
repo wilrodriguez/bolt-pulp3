@@ -1,4 +1,8 @@
 # @summary Destroy a Pulp-in-one-container
+#
+#   Depending on your sudo configuration, you may need to run `bolt plan run`
+#   with `--sudo-password-prompt`
+#
 # @param targets A single target to run on (the container host)
 plan pulp3::in_one_container::destroy (
   TargetSpec           $targets         = "localhost",
@@ -9,6 +13,7 @@ plan pulp3::in_one_container::destroy (
   Stdlib::Port         $container_port  = lookup('pulp3::in_one_container::container_port')|$k|{8080},
   Optional[Enum[podman,docker]] $runtime = undef,
   Boolean $force = false,
+  Boolean $files = false,
 ) {
   $host = get_target($targets)
   run_plan('facts', 'targets' => $host)
@@ -52,6 +57,12 @@ plan pulp3::in_one_container::destroy (
     }
     out::message( "Destroying container '${container_name}'..." )
     $rm_result = run_command("${runtime_exe} container rm -f ${container_name}", $host)
+  }
+
+  unless $files {
+    out::message('Skipping removal of local file mounts (enable with `files=true`')
+    out::message('Exiting plan...')
+    return undef
   }
 
   unless $container_root.strip.empty or $container_root == '/' {
