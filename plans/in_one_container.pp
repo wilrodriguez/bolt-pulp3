@@ -1,7 +1,7 @@
 # @summary Manage a Pulp-in-one-container
 # @param targets A single target to run on (the container host)
 plan pulp3::in_one_container (
-  TargetSpec           $targets          = "localhost",
+  TargetSpec           $targets          = 'localhost',
   String[1]            $user             = system::env('USER'),
   Stdlib::AbsolutePath $container_root   = system::env('PWD'),
   String[1]            $container_name   = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},

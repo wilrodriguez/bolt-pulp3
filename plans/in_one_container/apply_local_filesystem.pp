@@ -13,7 +13,7 @@ plan pulp3::in_one_container::apply_local_filesystem (
   $apply_el7_docker_fixes = $host.facts['pioc_apply_el7_docker_fixes']
   return apply(
     $host,
-    '_description' => "ensure directories exist in container root ($container_root)",
+    '_description' => "ensure directories exist in container root (${container_root})",
     '_noop' => $noop,
     '_catch_errors' => false,
   ){
@@ -52,6 +52,36 @@ plan pulp3::in_one_container::apply_local_filesystem (
         TOKEN_AUTH_DISABLED=True
         ALLOWED_CONTENT_CHECKSUMS=['sha224', 'sha256', 'sha384', 'sha512', 'sha1', 'md5']
         ALLOWED_IMPORT_PATHS=['/run/ISOs/unpacked','/allowed_imports']
+        LOGGING={
+            'version': 1,
+            'disable_existing_loggers': False,
+            'formatters': {
+                'console': {
+                    'format': '%(name)-12s %(levelname)-8s %(message)s'
+                },
+                'file': {
+                    'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+                }
+            },
+            'handlers': {
+                'console': {
+                    'class': 'logging.StreamHandler',
+                    'formatter': 'console'
+                },
+                'file': {
+                    'level': 'INFO',
+                    'class': 'logging.FileHandler',
+                    'formatter': 'file',
+                    'filename': '/run/django-info.log'
+                }
+            },
+            'loggers': {
+                '': {
+                    'level': 'INFO',
+                    'handlers': ['console', 'file']
+                }
+            }
+        }
         | SETTINGS
     }
   }
