@@ -109,7 +109,7 @@ class Pulp3RpmMirrorSlimmer
     repos_data
   end
 
-  def create_rpm_repo_mirror(name, remote_url, repo, _labels = {})
+  def create_rpm_repo_mirror(name:, remote_url:, repo:, proxy_url: nil, pulp_labels: {})
     # create remote
     warn "-- creating remote #{name} from #{remote_url}"
 
@@ -118,6 +118,7 @@ class Pulp3RpmMirrorSlimmer
         name: name,
         url: remote_url,
         policy: 'on_demand', # policy: 'immediate',
+        proxy_url: proxy_url,
         tls_validation: false
       )
 
@@ -388,7 +389,13 @@ class Pulp3RpmMirrorSlimmer
     end
     repos_to_mirror.each do |name, data|
       repo = ensure_rpm_repo(name, pulp_labels)
-      rpm_rpm_repository_version_href = create_rpm_repo_mirror(name, data['url'], repo, pulp_labels)
+      rpm_rpm_repository_version_href = create_rpm_repo_mirror(
+        name: name,
+        remote_url: data['url'],
+        repo: repo,
+        proxy_url: data['proxy_url'] || nil,
+        pulp_labels: pulp_labels
+      )
 require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       publication = ensure_rpm_publication(rpm_rpm_repository_version_href, pulp_labels)
       ensure_rpm_distro(name, publication.pulp_href)
@@ -488,7 +495,8 @@ require 'optparse'
 
 options = {
   action: :use_existing,
-  repos_to_mirror_file: 'repos_to_mirror.yaml',
+  repos_to_mirror_file: nil,
+  # FIXME: change/require?
   pulp_label_session: 'testbuild-6.6.0',
   pulp_user: 'admin',
   pulp_password: 'admin',
@@ -496,7 +504,7 @@ options = {
 
 OptsFilepath = String
 OptsYAMLFilepath = Hash
-OptionParser.new do |opts|
+opts_parser = OptionParser.new do |opts|
   opts.banner = 'Usage: do.rb [options]'
 
   opts.accept(OptsYAMLFilepath) do |path|
@@ -531,8 +539,20 @@ OptionParser.new do |opts|
   opts.on('-v', '--[no-]verbose', 'Run verbosely') do |v|
     options[:verbose] = v
   end
-end.parse!
+end
+opts_parser.parse!
 
+unless options[:repos_to_mirror_file]
+  warn '', 'ERROR: missing `--repos-rpms-file YAML_FILE` !', ''
+  puts opts_parser.help
+  exit 1
+end
+
+unless options[:repos_to_mirror_file]
+  warn '', 'ERROR: missing `--repos-rpms-file YAML_FILE` !', ''
+  puts opts_parser.help
+  exit 1
+end
 puts options.to_yaml
 p ARGV
 

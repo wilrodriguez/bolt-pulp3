@@ -1,6 +1,7 @@
 ---
 pulp-el7-puppet:
-  url: https://yum.puppet.com/puppet6/el/7/x86_64/
+  url: http://yum.puppet.com/puppet6/el/7/x86_64/
+  #proxy_url: http://localhost:8888
   rpms:
   - puppet-agent
   - puppet-bolt
