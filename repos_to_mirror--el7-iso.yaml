@@ -508,7 +508,7 @@ pulp-os:
   - name: iwl6000-firmware
   - name: iwl6050-firmware
   - name: iwl7260-firmware
-  - name: iwl7265-firmware
+  ### - name: iwl7265-firmware  # Doesn't exist in repos or last ISO
   - name: jackson
   - name: jakarta-commons-httpclient
   - name: jakarta-oro
@@ -1662,6 +1662,7 @@ pulp-epel:
   - name: python-linecache2
   - name: re2
   - name: rkhunter
+  ###  - name: ruby-ldap # <-- 2014-era package (*GONE* from EPEL), only used by one simp-utils script.  Ditching it
   - name: rubygem-highline
   - name: rubygem-net-ldap
   - name: rubygem-net-ldap-doc
@@ -1689,7 +1690,6 @@ pulp-simp:
   - name: HIRS_Provisioner_TPM_2_0
   - name: chkrootkit
   - name: paccor
-  - name: ruby-ldap
   - name: simp-lastbind
   - name: simp-ppolicy-check-password
   - name: simp-tpm12-simulator

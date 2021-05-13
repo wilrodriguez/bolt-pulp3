@@ -118,19 +118,20 @@ class Pulp3RpmMirrorSlimmer
     repos_data = nil
     repos_list = @ReposAPI.list(name: name)
     if repos_list.count > 0
-      @log.info "Repo '#{name}' already exists, moving on..."
+      @log.verbose "Repo '#{name}' already exists, moving on..."
       repos_data = repos_list.results[0]
     else
       rpm_rpm_repository = PulpRpmClient::RpmRpmRepository.new(name: name, pulp_labels: labels)
       repos_data = @ReposAPI.create(rpm_rpm_repository, opts)
     end
-    @log.verbose repos_data.to_hash.to_yaml
+    @log.success("RPM repo '#{name}' exists")
+    @log.debug repos_data.to_hash.to_yaml
     repos_data
   end
 
   def create_rpm_repo_mirror(name:, remote_url:, repo:, mirror_options: {}, pulp_labels: {})
     # create remote
-    @log.happy "Creating remote #{name} from #{remote_url}"
+    @log.info "Creating remote #{name} from #{remote_url}"
 
     remote_opts = {
       'name' => name,
@@ -170,7 +171,7 @@ class Pulp3RpmMirrorSlimmer
     begin
       list = @PublicationsAPI.list(repository_version: rpm_rpm_repository_version_href)
       if list.count > 0
-        @log.info "Publication for '#{rpm_rpm_repository_version_href}' already exists, moving on..."
+        @log.verbose "Publication for '#{rpm_rpm_repository_version_href}' already exists, moving on..."
         return list.results.first
       end
       # Create Publication
@@ -190,7 +191,7 @@ class Pulp3RpmMirrorSlimmer
   end
 
   def ensure_rpm_distro(name, pub_href, labels = {})
-    @log.happy( "== ensure RPM distro #{name} for publication #{pub_href}")
+    @log.info( "== ensure RPM distro #{name} for publication #{pub_href}")
     result = nil
     begin
       rpm_rpm_distribution = PulpRpmClient::RpmRpmDistribution.new(
@@ -206,14 +207,14 @@ class Pulp3RpmMirrorSlimmer
           @log.warn "WARNING: distro '#{name}' already exists with publication #{pub_href}!"
           return distro
         end
-        @log.happy "== Updating distro '#{name}'"
+        @log.info "== Updating distro '#{name}'"
         dist_sync_info = @DistributionsAPI.update(distro.pulp_href, rpm_rpm_distribution)
         wait_for_task_to_complete(dist_sync_info.task)
         return @DistributionsAPI.list(name: name).results.first
       end
 
       # Create Distribution
-      @log.happy "== Creating distro '#{name}'"
+      @log.info "== Creating distro '#{name}'"
       dist_sync_info = @DistributionsAPI.create(rpm_rpm_distribution)
       dist_created_resources = wait_for_create_task_to_complete(dist_sync_info.task)
       dist_href = dist_created_resources.first
@@ -225,7 +226,8 @@ class Pulp3RpmMirrorSlimmer
       @log.warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
       require 'pry'; binding.pry
     end
-    @log.verbose result.to_hash.to_yaml
+    @log.success("RPM distro '#{name}' exists")
+    @log.debug result.to_hash.to_yaml
     result
   end
 
@@ -351,19 +353,19 @@ class Pulp3RpmMirrorSlimmer
     api_results = []
     results = []
 
-    # The API can only look for so many RPMs at a time, so query in batches
     api_result_count = nil
+    queried_rpms_count = 0
+
+    # The API can only look for so many RPMs at a time, so query in batches
     rpm_reqs.each_slice(rpm_batch_size).to_a.each do |slice_of_rpms|
+      @log.verbose("Querying RPMs by name, batch: #{queried_rpms_count+1}-#{queried_rpms_count+slice_of_rpms.size}")
       rpm_names = slice_of_rpms.map{|r| r['name']}
+      queried_rpms_count += rpm_names.size
       offset = 0
       next_url = nil
 
       until offset > 0 && next_url.nil? do
-        @log.verbose(
-          "Querying #{rpm_names.size} RPMs by name " + \
-          "offset: #{offset}#{api_result_count ? ", total considered: #{api_results.size}/#{api_result_count}" : ''}) " + \
-          "(#{rpm_names.hash})"
-        )
+        @log.verbose( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
 
         paginated_package_response_list = @ContentPackageAPI.list({
           name__in: rpm_names,
@@ -378,10 +380,11 @@ class Pulp3RpmMirrorSlimmer
         api_results += paginated_package_response_list.results
         offset += paginated_package_response_list.results.size
         next_url = paginated_package_response_list._next
-        api_result_count ||= paginated_package_response_list.count
+        api_result_count = paginated_package_response_list.count
       end
     end
 
+    @log.verbose("Resolving constraints & best version for RPM from API results" )
     api_results.map(&:name).uniq.each do |rpm_name|
       rpm_req = rpm_reqs.select{|r| r['name'] == rpm_name }.first
       n_rpms = api_results.select{|r| r.name == rpm_name }
@@ -431,9 +434,7 @@ class Pulp3RpmMirrorSlimmer
     # Check that we found all rpm_reqs
     missing_names = rpm_reqs.map{|r| r['name']}.uniq - results.map(&:name).uniq
     unless missing_names.empty?
-      @log.warn "WARNING: Missing #{missing_names.size} requested RPMs:\n  - #{missing_names.join("\n  - ")}\n\n"
-      # FIXME TODO log this/return the missing RPMs
-      sleep 10
+      fail "\nFATAL: Repo was missing #{missing_names.size} requested RPMs:\n  - #{missing_names.join("\n  - ")}\n\n"
     end
 
     results.map { |x| x.pulp_href }
@@ -443,7 +444,7 @@ class Pulp3RpmMirrorSlimmer
     config = []
 
     # Build API request body
-    dest_repos.each do |_name, data|
+    dest_repos.each do |name, data|
       config << {
         'source_repo_version' => data[:source_repo_version_href],
         'dest_repo' => data[:pulp_href],
@@ -452,7 +453,8 @@ class Pulp3RpmMirrorSlimmer
     end
 
     begin
-      @log.happy "== Copying RPMs into slim Repo mirrors"
+      @log.info "== Copying RPMs into slim Repo mirrors..."
+      @log.verbose "Dest repos: #{dest_repos.keys.join(', ')}"
       @log.debug config.to_yaml
       copy = PulpRpmClient::Copy.new({
         config: config,
@@ -470,6 +472,7 @@ class Pulp3RpmMirrorSlimmer
       require 'pry'; binding.pry
       raise e
     end
+    @log.info "== Sucessfully copied RPMs+dependencies into dest repositories"
   end
 
   def delete_rpm_repo_mirrors(repos_to_mirror)
@@ -506,6 +509,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     slim_repos = {}
 
     repos_to_mirror.each do |name, data|
+      @log.info("Ensuring slim repo mirror of '#{name}'")
       source_repo_version_href = get_repo_version_from_distro(name).pulp_href
       required_rpm_hrefs = get_rpm_hrefs(source_repo_version_href, data['rpms'])
 
@@ -517,6 +521,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       slim_repos[slim_repo_name][:source_repo_name] = name
       slim_repos[slim_repo_name][:source_repo_version_href] = source_repo_version_href
       slim_repos[slim_repo_name][:required_rpm_hrefs] = required_rpm_hrefs
+      @log.success("Slim repo mirror '#{slim_repo_name}' exists to copy from '#{name}'")
     end
     slim_repos
   end
@@ -695,24 +700,25 @@ def get_logger(log_file: 'rpm_mirror_slimmer.log')
     message: :magenta
   )
 
-  Logging.appenders.stdout(
-    'stdout',
-    layout: Logging.layouts.pattern(
-      #          :pattern => '[%d] %-5l %c: %m\n',
-      color_scheme: 'bright' # bright
-    )
-  )
-
   log = Logging.logger[Pulp3RpmMirrorSlimmer]
   log.add_appenders(
-    Logging.appenders.stdout,
-    Logging.appenders.file('log_file', level: :happy),
-    Logging.appenders.file('log_file', level: :recovery),
-    Logging.appenders.file('log_file', level: :error),
-    Logging.appenders.file('log_file', level: :warn),
-    Logging.appenders.file('log_file', level: :fatal)
+    Logging.appenders.stdout(
+      layout: Logging.layouts.pattern(color_scheme: 'bright')
+    ),
+    Logging.appenders.rolling_file(
+      "#{File.basename(log_file,'.log')}.debug.log",
+      level: :debug,
+      layout: Logging.layouts.pattern(backtrace: true),
+      truncate: true
+    ),
+    Logging.appenders.rolling_file(
+      "#{File.basename(log_file,'.log')}.info.log",
+      level: :info,
+      layout: Logging.layouts.pattern(backtrace: true),
+      truncate: true
+    )
   )
-  log.level = :debug # :info
+  log.level = :verbose
   log
 end
 
