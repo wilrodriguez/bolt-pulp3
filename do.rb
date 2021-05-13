@@ -4,13 +4,33 @@ require 'yaml'
 
 PULP_HOST = "http://localhost:#{ENV['PULP_PORT'] || 8080}"
 
+# Mirrors & copies RPMs from multiple repos into "slim" subset repositories,
+#   including all RPM and modular dependencies.
+#
+# Pulp 3 documentation:
+#
+#  * Pulp 3 core:       https://docs.pulpproject.org/pulpcore/
+#  * `pulp_rpm` Plugin: https://docs.pulpproject.org/pulp_rpm/
+#
+# REST APIs:
+#
+#  * https://docs.pulpproject.org/pulpcore/restapi.html
+#  * https://docs.pulpproject.org/pulp_rpm/restapi.html
+#
+# RubyGem client APIs:
+#
+#   * https://www.rubydoc.info/gems/pulpcore_client/
+#   * https://www.rubydoc.info/gems/pulp_rpm_client/
+#
 class Pulp3RpmMirrorSlimmer
   def initialize(
     build_name:,
+    logger:,
     pulp_user: 'admin',
     pulp_password: 'admin'
   )
     @build_name = build_name
+    @log = logger
     @pulp_labels = {
       'simpbuildsession' => "#{build_name}-#{Time.now.strftime("%F")}",
     }
@@ -24,13 +44,12 @@ class Pulp3RpmMirrorSlimmer
     #
     PulpcoreClient.configure do |config|
       config.host = PULP_HOST
-      config.username = 'admin'
-      config.password = 'admin'
+      config.username = pulp_user
+      config.password = pulp_password
       # config.debugging = true
       # config.logger =  # Defines the logger used for debugging.
     end
 
-    # https://www.rubydoc.info/gems/pulp_rpm_client/3.10.0
 
     # For all options, see:
     #
@@ -38,8 +57,8 @@ class Pulp3RpmMirrorSlimmer
     #
     PulpRpmClient.configure do |config|
       config.host = PULP_HOST
-      config.username = 'admin'
-      config.password = 'admin'
+      config.username = pulp_user
+      config.password = pulp_password
       config.debugging = ENV['DEBUG'].to_s.match?(/yes|true|1/i)
     end
 
@@ -59,8 +78,8 @@ class Pulp3RpmMirrorSlimmer
     # Wait for sync task to complete
     until %w[completed failed].any? { |state| @TasksAPI.read(task).state == state }
       task_info = @TasksAPI.read(task)
-      puts "#{Time.now} ...Waiting for task '#{task_info.name}' to complete (status: '#{task_info.state})'"
-      warn "      ( pulp_href: #{task_info.pulp_href} )"
+      @log.info "#{Time.now} ...Waiting for task '#{task_info.name}' to complete (status: '#{task_info.state})'"
+      @log.verbose "( pulp_href: #{task_info.pulp_href} )"
       sleep opts[:sleep_time]
     end
 
@@ -76,19 +95,19 @@ class Pulp3RpmMirrorSlimmer
     begin
       created_resources = @TasksAPI.read(task).created_resources
     rescue NameError => e
-      warn e
-      warn e.backtrace
+      @log.warn e
+      @log.warn e.backtrace
       require 'pry'; binding.pry
     end
 
     if created_resources.empty? && opts[:min_expected_resources] > 0
-      warn "WARNING: sync task created 0 resources (task: '#{task}')"
+      @log.warn "WARNING: sync task created 0 resources (task: '#{task}')"
     end
 
     if created_resources.size > opts[:max_expected_resources]
       n = created_resources.size
-      warn "WARNING: sync task created #{n} resources (task: '#{task}')"
-      warn 'As far as we know, the task should only return 1.  So, check it out with pry!'
+      @log.warn "WARNING: sync task created #{n} resources (task: '#{task}')"
+      @log.warn 'As far as we know, the task should only return 1.  So, check it out with pry!'
       require 'pry'; binding.pry
     end
 
@@ -99,19 +118,19 @@ class Pulp3RpmMirrorSlimmer
     repos_data = nil
     repos_list = @ReposAPI.list(name: name)
     if repos_list.count > 0
-      warn "WARNING: repo '#{name}' already exists!"
+      @log.info "Repo '#{name}' already exists, moving on..."
       repos_data = repos_list.results[0]
     else
       rpm_rpm_repository = PulpRpmClient::RpmRpmRepository.new(name: name, pulp_labels: labels)
       repos_data = @ReposAPI.create(rpm_rpm_repository, opts)
     end
-    puts repos_data.to_hash.to_yaml
+    @log.verbose repos_data.to_hash.to_yaml
     repos_data
   end
 
   def create_rpm_repo_mirror(name:, remote_url:, repo:, mirror_options: {}, pulp_labels: {})
     # create remote
-    warn "-- creating remote #{name} from #{remote_url}"
+    @log.happy "Creating remote #{name} from #{remote_url}"
 
     remote_opts = {
       'name' => name,
@@ -136,8 +155,8 @@ class Pulp3RpmMirrorSlimmer
       )
       sync_async_info = @ReposAPI.sync(repo.pulp_href, rpm_repository_sync_url)
     rescue PulpcoreClient::ApiError, PulpRpmClient::ApiError => e
-      puts "Exception when calling API: #{e}"
-      warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
+      @log.error "Exception when calling API: #{e}"
+      @log.warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
       require 'pry'; binding.pry
     end
 
@@ -151,7 +170,7 @@ class Pulp3RpmMirrorSlimmer
     begin
       list = @PublicationsAPI.list(repository_version: rpm_rpm_repository_version_href)
       if list.count > 0
-        warn "WARNING: publication for '#{rpm_rpm_repository_version_href}' already exists!"
+        @log.info "Publication for '#{rpm_rpm_repository_version_href}' already exists, moving on..."
         return list.results.first
       end
       # Create Publication
@@ -163,15 +182,15 @@ class Pulp3RpmMirrorSlimmer
       pub_created_resources = wait_for_create_task_to_complete(pub_sync_info.task)
       pub_href = pub_created_resources.first
     rescue PulpcoreClient::ApiError, PulpRpmClient::ApiError => e
-      puts "Exception when calling API: #{e}"
-      warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
+      @log.error "Exception when calling API: #{e}"
+      @log.warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
       require 'pry'; binding.pry
     end
      @PublicationsAPI.read( pub_href )
   end
 
   def ensure_rpm_distro(name, pub_href, labels = {})
-    warn( "== ensure RPM distro #{name} for publication #{pub_href}")
+    @log.happy( "== ensure RPM distro #{name} for publication #{pub_href}")
     result = nil
     begin
       rpm_rpm_distribution = PulpRpmClient::RpmRpmDistribution.new(
@@ -184,17 +203,17 @@ class Pulp3RpmMirrorSlimmer
       if list.count > 0
         distro = list.results.first
         if distro.publication == pub_href
-          warn "WARNING: distro '#{name}' already exists with publication #{pub_href}!"
+          @log.warn "WARNING: distro '#{name}' already exists with publication #{pub_href}!"
           return distro
         end
-        warn "== Updating distro '#{name}'"
+        @log.happy "== Updating distro '#{name}'"
         dist_sync_info = @DistributionsAPI.update(distro.pulp_href, rpm_rpm_distribution)
         wait_for_task_to_complete(dist_sync_info.task)
         return @DistributionsAPI.list(name: name).results.first
       end
 
       # Create Distribution
-      warn "== Creating distro '#{name}'"
+      @log.happy "== Creating distro '#{name}'"
       dist_sync_info = @DistributionsAPI.create(rpm_rpm_distribution)
       dist_created_resources = wait_for_create_task_to_complete(dist_sync_info.task)
       dist_href = dist_created_resources.first
@@ -202,11 +221,11 @@ class Pulp3RpmMirrorSlimmer
       distribution_data = @DistributionsAPI.list({ base_path: name })
       return(distribution_data.results.first)
     rescue PulpcoreClient::ApiError, PulpRpmClient::ApiError => e
-      puts "Exception when calling API: #{e}"
-      warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
+      @log.error "Exception when calling API: #{e}"
+      @log.warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
       require 'pry'; binding.pry
     end
-    puts result.to_hash.to_yaml
+    @log.verbose result.to_hash.to_yaml
     result
   end
 
@@ -215,7 +234,7 @@ class Pulp3RpmMirrorSlimmer
     repos_list = @ReposAPI.list(name: name)
     if repos_list.count > 0
       repos_list.results.each do |repo_data|
-        warn "!! DELETING repo #{repo_data.name}: #{repo_data.pulp_href}"
+        @log.warn "!! DELETING repo #{repo_data.name}: #{repo_data.pulp_href}"
         async_response_data = @ReposAPI.delete(repo_data.pulp_href)
         async_responses << async_response_data if async_response_data
         # @RepoVersionsAPI.delete(repo_data.versions_href) unless repo_data.versions_href.empty?
@@ -230,7 +249,7 @@ class Pulp3RpmMirrorSlimmer
     list = api.list(name: name)
     if list.count > 0
       list.results.each do |data|
-        warn "!! DELETING remote #{data.name}: #{data.pulp_href}"
+        @log.warn "!! DELETING remote #{data.name}: #{data.pulp_href}"
         async_response_data = api.delete(data.pulp_href)
         async_responses << async_response_data if async_response_data
       end
@@ -250,7 +269,7 @@ class Pulp3RpmMirrorSlimmer
     return [] unless publication_href
 
     begin
-      warn "!! DELETING publication: (#{distro_name}) #{publication_href}"
+      @log.warn "!! DELETING publication: (#{distro_name}) #{publication_href}"
       async_response_data = @PublicationsAPI.delete(publication_href)
       async_responses << async_response_data if async_response_data
     rescue PulpRpmClient::ApiError => e
@@ -268,7 +287,7 @@ class Pulp3RpmMirrorSlimmer
 
     if distributions_list.count > 0
       distributions_list.results.each do |distribution_data|
-        warn "!! DELETING distribution #{distribution_data.name}: #{distribution_data.pulp_href}"
+        @log.warn "!! DELETING distribution #{distribution_data.name}: #{distribution_data.pulp_href}"
         async_response_data = @DistributionsAPI.delete(distribution_data.pulp_href)
         async_responses << async_response_data if async_response_data
       end
@@ -296,7 +315,7 @@ class Pulp3RpmMirrorSlimmer
         wait_for_task_to_complete(delete_async_info.task)
       end
     rescue PulpcoreClient::ApiError => e
-      puts "Exception when calling API: #{e}"
+      @log.error "Exception when calling API: #{e}"
       require 'pry'; binding.pry
     end
   end
@@ -340,9 +359,10 @@ class Pulp3RpmMirrorSlimmer
       next_url = nil
 
       until offset > 0 && next_url.nil? do
-        warn(
-          "Asking for #{rpm_names.size} RPM names (#{rpm_names.hash}) " + \
-          "offset: #{offset}#{api_result_count ? ", total considered: #{api_results.size}/#{api_result_count}" : ''})"
+        @log.verbose(
+          "Querying #{rpm_names.size} RPMs by name " + \
+          "offset: #{offset}#{api_result_count ? ", total considered: #{api_results.size}/#{api_result_count}" : ''}) " + \
+          "(#{rpm_names.hash})"
         )
 
         paginated_package_response_list = @ContentPackageAPI.list({
@@ -374,7 +394,7 @@ class Pulp3RpmMirrorSlimmer
           # TODO: logic to compare release and epoch
           Gem::Dependency.new('', rpm_req['version']).match?('', Gem::Version.new(r.version))
         end
-        # fail/warn when no RPMs meet constraints
+        # fail/@log.warn when no RPMs meet constraints
         raise "ERROR: No '#{rpm_name}' RPMs met the version constraint: '#{rpm_req['version']}' (#{size} considered)" if n_rpms.empty?
       end
 
@@ -393,13 +413,13 @@ class Pulp3RpmMirrorSlimmer
 
       # remove `<name>.i686` unless there is no `<name>.x86_64`
       if n_results.any?{|x| x.arch == 'i686' } && n_results.any?{|x| x.arch == 'x86_64' }
-        warn "WARNING: Ignoring #{rpm_name}.i686 because #{rpm_name}.x86_64 exists"
+        @log.warn "WARNING: Ignoring #{rpm_name}.i686 because #{rpm_name}.x86_64 exists"
         n_results.reject!{|x| x.arch == 'i686' }
       end
 
       # This is still a weird case, so investigate it until we know what to expect
       if n_results.size > 1
-        warn "WARNING: RPMs for muliple arches found for '#{rpm_name}': #{n_results.map{|r| r.arch }.uniq.join(', ')}"
+        @log.warn "WARNING: RPMs for muliple arches found for '#{rpm_name}': #{n_results.map{|r| r.arch }.uniq.join(', ')}"
         sleep 1
         puts "Investigate this!"
         require 'pry'; binding.pry
@@ -411,7 +431,7 @@ class Pulp3RpmMirrorSlimmer
     # Check that we found all rpm_reqs
     missing_names = rpm_reqs.map{|r| r['name']}.uniq - results.map(&:name).uniq
     unless missing_names.empty?
-      warn "WARNING: Missing #{missing_names.size} requested RPMs:\n  - #{missing_names.join("\n  - ")}\n\n"
+      @log.warn "WARNING: Missing #{missing_names.size} requested RPMs:\n  - #{missing_names.join("\n  - ")}\n\n"
       # FIXME TODO log this/return the missing RPMs
       sleep 10
     end
@@ -419,19 +439,21 @@ class Pulp3RpmMirrorSlimmer
     results.map { |x| x.pulp_href }
   end
 
-  def advanced_rpm_copy(repos_to_mirror)
+  def advanced_rpm_copy(dest_repos)
     config = []
 
     # Build API request body
-    repos_to_mirror.each do |_name, data|
+    dest_repos.each do |_name, data|
       config << {
         'source_repo_version' => data[:source_repo_version_href],
-        'dest_repo' => data[:dest_repo_href],
-        'content' => data[:rpm_hrefs]
+        'dest_repo' => data[:pulp_href],
+        'content' => data[:required_rpm_hrefs],
       }
     end
 
     begin
+      @log.happy "== Copying RPMs into slim Repo mirrors"
+      @log.debug config.to_yaml
       copy = PulpRpmClient::Copy.new({
         config: config,
         dependency_solving: true
@@ -443,8 +465,8 @@ class Pulp3RpmMirrorSlimmer
       task_result = wait_for_task_to_complete(async_response.task)
       raise PulpcoreClient::ApiError, "Pulp3 ERROR: Task #{async_response.task} failed:\n\n#{task_result.error['description']}" if task_result.state == 'failed'
       async_response.task
-    rescue PulpcoreClient::ApiError => e
-      puts "Exception when calling API: #{e}"
+    rescue PulpRpmClient::ApiError, PulpcoreClient::ApiError => e
+      @log.error "Exception when calling API: #{e}"
       require 'pry'; binding.pry
       raise e
     end
@@ -474,27 +496,37 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       publication = ensure_rpm_publication(rpm_rpm_repository_version_href, pulp_labels)
       ensure_rpm_distro(name, publication.pulp_href)
     end
-    do_use_existing(repos_to_mirror)
   end
 
-  def do_use_existing(repos_to_mirror)
+
+  # Ensures slim repos exist for repos_to_mirror
+  # @return [Hash] slim_repos data structure
+  def slim_repos_for(repos_to_mirror)
     pulp_labels = @pulp_labels.merge({ 'reporole' => 'slim_repo' })
     slim_repos = {}
 
     repos_to_mirror.each do |name, data|
-      repo_version_href = get_repo_version_from_distro(name).pulp_href
-      repos_to_mirror[name][:source_repo_version_href] = repo_version_href
-      repos_to_mirror[name][:rpm_hrefs] = get_rpm_hrefs(repo_version_href, data['rpms'])
+      source_repo_version_href = get_repo_version_from_distro(name).pulp_href
+      required_rpm_hrefs = get_rpm_hrefs(source_repo_version_href, data['rpms'])
 
       slim_repo_name = name.sub(/^pulp\b/, @build_name)
       repo = ensure_rpm_repo(slim_repo_name, pulp_labels)
+
       slim_repos[slim_repo_name] ||= {}
       slim_repos[slim_repo_name][:pulp_href] = repo.pulp_href
       slim_repos[slim_repo_name][:source_repo_name] = name
-      repos_to_mirror[name][:dest_repo_href] = repo.pulp_href
+      slim_repos[slim_repo_name][:source_repo_version_href] = source_repo_version_href
+      slim_repos[slim_repo_name][:required_rpm_hrefs] = required_rpm_hrefs
     end
+    slim_repos
+  end
 
-    copy_task = advanced_rpm_copy(repos_to_mirror)
+  def do_use_existing(repos_to_mirror)
+    pulp_labels = @pulp_labels.merge({ 'reporole' => 'slim_repo' })
+    slim_repos = slim_repos_for(repos_to_mirror)
+
+    # Slim RPM copy from all repos_to_mirror to all slim_repos
+    copy_task = advanced_rpm_copy(slim_repos)
     copy_task.inspect
 
     slim_repos.each do |name, data|
@@ -506,14 +538,12 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       slim_repos[name][:distro_url] = distro.base_url
     end
 
-
     output_file = '_slim_repos.yaml'
     output_repo_file = File.basename( output_file, '.yaml' ) + '.repo'
     output_repo_script = File.basename( output_file, '.yaml' ) + '.sh'
 
-    puts "\nWriting slim_repos data to: '#{output_file}"
+    @log.info "\nWriting slim_repos data to: '#{output_file}"
     File.open(output_file, 'w') { |f| f.puts slim_repos.to_yaml }
-
 
     yum_repo_file_content = slim_repos.map do |k,v|
       result = <<~REPO_ENTRY
@@ -525,7 +555,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       REPO_ENTRY
        "#{result}\n"
     end
-    puts "\nWriting slim_repos repo config to: '#{output_repo_file}"
+    @log.info "\nWriting slim_repos repo config to: '#{output_repo_file}"
     File.open(output_repo_file, 'w') { |f| f.puts yum_repo_file_content }
 
     dnf_mirror_cmd = <<~CMD_START
@@ -543,29 +573,35 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
 
     dnf_mirror_cmd += slim_repos.map { |k,v| "  --repofrompath #{k.sub("#{@build_name}-",'')},#{v[:distro_url]}" }.join(" \\\n")
     dnf_mirror_cmd += " \\\n" + slim_repos.map { |k,v| "  --repoid #{k.sub("#{@build_name}-",'')}" }.join(" \\\n")
-    puts "\nWriting slim_repos repo config to: '#{output_repo_script}"
+    @log.info "\nWriting slim_repos repo config to: '#{output_repo_script}"
     File.open(output_repo_script, 'w') { |f| f.puts dnf_mirror_cmd }
 
 
-    puts "\nSlim repos:",
-      slim_repos.map{ |k,v| "    #{v[:distro_url]}" }.join("\n"), ''
+    @log.info "\nSlim repos:\n" + \
+      slim_repos.map{ |k,v| "    #{v[:distro_url]}" }.join("\n") + "\n"
 
-    puts "\nYum repo file content:", yum_repo_file_content
+    @log.info "\nYum repo file content:\n#{yum_repo_file_content.join("\n")}"
 
   end
 
   def do(action:, repos_to_mirror_file:)
     repos_to_mirror = YAML.load_file(repos_to_mirror_file)
 
-    if action == :create_new
+    case action
+    when :delete
+      delete_rpm_repo_mirrors(repos_to_mirror)
+    when :create_new
       delete_rpm_repo_mirrors(repos_to_mirror)
       do_create_new(repos_to_mirror)
-    elsif action == :use_existing
+      do_use_existing(repos_to_mirror)
+    when :use_existing
       do_use_existing(repos_to_mirror)
     end
   end
 end
 
+OptsFilepath = String
+OptsYAMLFilepath = Hash
 def parse_options
   require 'optparse'
 
@@ -578,8 +614,6 @@ def parse_options
     pulp_password: 'admin',
   }
 
-  OptsFilepath = String
-  OptsYAMLFilepath = Hash
   opts_parser = OptionParser.new do |opts|
     opts.banner = 'Usage: do.rb [options]'
 
@@ -603,6 +637,10 @@ def parse_options
 
     opts.on('-e', '--use-existing', 'Use existing repo mirrors') do |_v|
       options[:action] = :use_existing
+    end
+
+    opts.on('-d', '--delete-existing', 'Delete existing mirrors & repos') do |_v|
+      options[:action] = :delete
     end
 
     opts.on(
@@ -630,10 +668,11 @@ def parse_options
     exit 1
   end
 
-  optparse
+  options
 end
 
 def get_logger(log_file: 'rpm_mirror_slimmer.log')
+  require 'logging'
   # Default logger
   Logging.init :debug, :verbose, :info, :happy, :warn, :success, :error, :recovery, :fatal
 
@@ -667,11 +706,13 @@ def get_logger(log_file: 'rpm_mirror_slimmer.log')
   log = Logging.logger[Pulp3RpmMirrorSlimmer]
   log.add_appenders(
     Logging.appenders.stdout,
+    Logging.appenders.file('log_file', level: :happy),
     Logging.appenders.file('log_file', level: :recovery),
     Logging.appenders.file('log_file', level: :error),
+    Logging.appenders.file('log_file', level: :warn),
     Logging.appenders.file('log_file', level: :fatal)
   )
-  log.level = :info
+  log.level = :debug # :info
   log
 end
 
@@ -683,8 +724,9 @@ mirror_slimmer = Pulp3RpmMirrorSlimmer.new(
   build_name: options[:pulp_label_session],
   pulp_user:     options[:pulp_user],
   pulp_password: options[:pulp_password],
-  logger: get_logger('rpm_mirror_slimmer.log')
+  logger: get_logger(log_file: 'rpm_mirror_slimmer.log')
 )
+
 mirror_slimmer.do(
   action:               options[:action],
   repos_to_mirror_file: options[:repos_to_mirror_file],

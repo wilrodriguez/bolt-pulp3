@@ -1,7 +1,8 @@
 ---
 pulp-puppet:
   url: http://yum.puppet.com/puppet6/el/7/x86_64/
-  # options passed directly to the remotes API to create a new remote
+  # mirror_options are passed directly to the Pulp3 RPM Remotes API when
+  # creating a new RPM Remote
   mirror_options:
     #policy: immediate
     policy: on_demand
@@ -152,7 +153,7 @@ pulp-os:
   - name: cairo
   - name: cairo-gobject
   - name: cal10n
-  # caribou* only in rhel-server distribution ISO
+  # caribou* was only in rhel-server distribution ISO, now also in CentOS7 os + epel
   - name: caribou
   - name: caribou-gtk2-module
   - name: caribou-gtk3-module
@@ -191,7 +192,7 @@ pulp-os:
   - name: coolkey
   - name: copy-jdk-configs
   - name: coreutils
-  # corosync* only in CentOS distribution ISO
+  # corosync* only in CentOS7 (os repo)
   - name: corosync
   - name: corosynclib
   - name: cpio
@@ -455,7 +456,7 @@ pulp-os:
   - name: ibus-libs
   - name: ibus-setup
   - name: icedax
-  # ima-evm-utils only in rhel-server distribution ISO
+  # ima-evm-utils was only in rhel-server distribution ISO, now also in CentOS7 (os)
   - name: ima-evm-utils
   - name: imsettings
   - name: imsettings-gsettings
@@ -913,7 +914,6 @@ pulp-os:
   - name: neon
   - name: netcf-libs
   - name: netlabel_tools
-  - name: netlabprelude-5.1.1-1.el7.x86_64.rpmbel_tools
   - name: nettle
   - name: net-snmp
   - name: net-snmp-agent-libs
@@ -1185,7 +1185,7 @@ pulp-os:
   - name: pyparsing
   - name: pytalloc
   - name: python
-  # python2-caribou only in rhel-server distribution ISO
+  # python2-caribou was only in rhel-server distribution ISO, now also in CentOS7 (os + epel)
   - name: python2-caribou
   - name: python2-cryptography
   - name: python2-futures
@@ -1242,7 +1242,7 @@ pulp-os:
   - name: python-pyudev
   - name: python-qrcode-core
   - name: python-requests
-  # python-rhsm* only in rhel-server distribution ISO
+  # python-rhsm* was only in rhel-server, no also in CentOS7 (os)
   - name: python-rhsm
   - name: python-rhsm-certificates
   - name: python-schedutils
@@ -1280,8 +1280,8 @@ pulp-os:
   - name: realmd
   - name: recode
   # redhat-indexhtml + redhat-logos only in rhel-server distribution ISO
-  - name: redhat-indexhtml
-  - name: redhat-logos
+  ### - name: redhat-indexhtml
+  ### - name: redhat-logos
   - name: redhat-lsb
   - name: redhat-lsb-core
   - name: redhat-lsb-cxx
@@ -1292,7 +1292,7 @@ pulp-os:
   - name: redhat-lsb-submod-security
   - name: redhat-menus
   # redhat-release-server only in rhel-server distribution ISO
-  - name: redhat-release-server
+  ### - name: redhat-release-server
   - name: redhat-rpm-config
   - name: regexp
   - name: relaxngDatatype
@@ -1443,7 +1443,7 @@ pulp-os:
   - name: tomcat-lib
   - name: tomcat-servlet-3.0-api
   - name: totem-pl-parser
-  # tpm2-* only in rhel-server distribution ISO
+    # tpm2-* was only in rhel-server, now also in CentOS7 (os)
   - name: tpm2-abrmd
   - name: tpm2-tools
   - name: tpm2-tss
@@ -1499,8 +1499,9 @@ pulp-os:
   - name: wavpack
   - name: webkitgtk3
   - name: webkitgtk4
+    version: '>= 2.28.2'
   - name: webkitgtk4-jsc
-  - name: webkitgtk4-plugin-process-gtk2
+    ### - name: webkitgtk4-plugin-process-gtk2  # Obsoleted by webkitgtk4 2.28+
   - name: webrtc-audio-processing
   - name: wget
   - name: which
@@ -1672,6 +1673,8 @@ pulp-epel:
   - name: x2goserver
   - name: x2goserver-common
   - name: x2goserver-xsession
+  - name: incron
+    version: '>= 0.5.12-9' # Resolved https://bugzilla.redhat.com/show_bug.cgi?id=1656939#c14
 pulp-postgresql:
   url: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/
   rpms:
