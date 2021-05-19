@@ -1,20 +1,40 @@
+# <repo-shortname>:
+#
+#   pulp_remote_options: [Hash] key/value pairs
+#                         passed directly to the Pulp3 RPM Remotes API when creating a new RPM Remote (mirror)
+#   rpms: a list of RPM metadata hashes
+#   Mandatory keys for each rpm:
+#
+#     name: [String] RPM 'name' field (the 'N' in NEVRA)
+#
+#   Optional keys for rpms:
+#
+#     version: [String,Array] Expression(s) to constrain the RPM version.
+#              Contraint expressions follow the same conventions as Bundler.
+#              (ex: '~> 6.8.0', '= 5.2.1', ['>= 4.2.0', '< 5.0'])
+#
+#     direct_url: [String] When defined, download RPM directly from URL,
+#                 overriding the repo mirror
 ---
 pulp-puppet:
   url: http://yum.puppet.com/puppet6/el/7/x86_64/
-  # mirror_options are passed directly to the Pulp3 RPM Remotes API when
-  # creating a new RPM Remote
-  mirror_options:
-    #policy: immediate
+  url: https://download.simp-project.com/simp/yum/releases/latest/el/7Server/x86_64/puppet/
+  ###url: https://download.simp-project.com/simp/yum/unstable/simp6/el/7Server/x86_64/puppet/
+  pulp_remote_options:
     policy: on_demand
-    #proxy_url: http://localhost:8888
   rpms:
   - name: puppet-agent
+    direct_url: http://yum.puppet.com/puppet6/el/7/x86_64/puppet-agent-6.22.1-1.el7.x86_64.rpm
   - name: puppet-bolt
+    direct_url: https://yum.puppet.com/puppet6/el/7/x86_64/puppet-bolt-3.8.1-1.el7.x86_64.rpm
   - name: puppet6-release
+    direct_url: http://yum.puppet.com/puppet6/el/7/x86_64/puppet6-release-6.0.0-14.el7.noarch.rpm
   - name: puppetdb
+    direct_url: http://yum.puppet.com/puppet6/el/7/x86_64/puppetdb-6.16.1-1.el7.noarch.rpm
   - name: puppetdb-termini
+    direct_url: http://yum.puppet.com/puppet6/el/7/x86_64/puppetdb-termini-6.16.1-1.el7.noarch.rpm
   - name: puppetserver
-    #version: '~> 6.8.0'
+    direct_url: http://yum.puppet.com/puppet6/el/7/x86_64/puppetserver-6.15.3-1.el7.noarch.rpm
 pulp-os:
   url: http://mirror.centos.org/centos/7/os/x86_64/
   rpms:
@@ -31,7 +51,7 @@ pulp-os:
   - name: tpm2-tools
   - name: tpm2-tss
   - name: tpm2-tss-devel
-  # pkglist.txt
+  # From pkglist.txt:
   - name: 389-ds-base-libs
   - name: GConf2
   - name: GeoIP
@@ -154,6 +174,7 @@ pulp-os:
   - name: cairo-gobject
   - name: cal10n
   # caribou* was only in rhel-server distribution ISO, now also in CentOS7 os + epel
+  # (no idea why we need it, though)
   - name: caribou
   - name: caribou-gtk2-module
   - name: caribou-gtk3-module
@@ -193,6 +214,7 @@ pulp-os:
   - name: copy-jdk-configs
   - name: coreutils
   # corosync* only in CentOS7 (os repo)
+  # (no idea why we need it, though)
   - name: corosync
   - name: corosynclib
   - name: cpio
@@ -1186,6 +1208,7 @@ pulp-os:
   - name: pytalloc
   - name: python
   # python2-caribou was only in rhel-server distribution ISO, now also in CentOS7 (os + epel)
+  # (no idea why we need it, though)
   - name: python2-caribou
   - name: python2-cryptography
   - name: python2-futures
@@ -1242,7 +1265,7 @@ pulp-os:
   - name: python-pyudev
   - name: python-qrcode-core
   - name: python-requests
-  # python-rhsm* was only in rhel-server, no also in CentOS7 (os)
+  # python-rhsm* was only in rhel-server, now also in CentOS7 (os)
   - name: python-rhsm
   - name: python-rhsm-certificates
   - name: python-schedutils
@@ -1841,4 +1864,3 @@ pulp-simp:
   - name: simp-rsync-skeleton
   - name: simp-selinux-policy
   - name: simp-utils
-### webkitgtk4-plugin-process-gtk2-2.22.7-2.el7.x86_64.rpm

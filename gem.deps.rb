@@ -16,3 +16,6 @@ gem 'terminal-table', '~> 1.8'
 #
 gem 'pulpcore_client'
 gem 'pulp_rpm_client'
+gem 'bindata'
+gem 'down'
+gem 'logging'
