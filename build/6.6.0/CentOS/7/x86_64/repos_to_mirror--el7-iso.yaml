@@ -16,12 +16,24 @@
 #     direct_url: [String] When defined, download RPM directly from URL,
 #                 overriding the repo mirror
 ---
+
+# NOTE: Something about the repository at https://yum.puppet.com/puppet6
+# prevents Pulp mirrors from fetching its RPM artifacts 99% of the time.
+#
+# As a workaround, all Puppet RPMs currently include a `direct_url` to a
+# specific package/version.  This prevents Pulp from mirroring the upstream
+# repo at all, and works like the old `packages.yaml` process.
+#
+# NOTE NOTE: While using direct_urls (and no Remote mirror), Pulp won't be able
+# to auto-resolve these RPMs to the best available versions or obey
+# constraints.  Make sure these are kept these up to date with new releases!
+#
 pulp-puppet:
-  url: http://yum.puppet.com/puppet6/el/7/x86_64/
-  url: https://download.simp-project.com/simp/yum/releases/latest/el/7Server/x86_64/puppet/
-  ###url: https://download.simp-project.com/simp/yum/unstable/simp6/el/7Server/x86_64/puppet/
+  url: http://yum.puppet.com/puppet6/el/7/x86_64/ # Not used to mirror
   pulp_remote_options:
     policy: on_demand
+
+  # Versions last updated: 2021/05/18
   rpms:
   - name: puppet-agent
     direct_url: http://yum.puppet.com/puppet6/el/7/x86_64/puppet-agent-6.22.1-1.el7.x86_64.rpm
@@ -35,6 +47,7 @@ pulp-puppet:
     direct_url: http://yum.puppet.com/puppet6/el/7/x86_64/puppetdb-termini-6.16.1-1.el7.noarch.rpm
   - name: puppetserver
     direct_url: http://yum.puppet.com/puppet6/el/7/x86_64/puppetserver-6.15.3-1.el7.noarch.rpm
+
 pulp-os:
   url: http://mirror.centos.org/centos/7/os/x86_64/
   rpms:
