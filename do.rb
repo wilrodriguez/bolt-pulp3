@@ -2,6 +2,7 @@
 
 require 'yaml'
 require 'fileutils'
+require 'tempfile'
 
 PULP_HOST = "http://localhost:#{ENV['PULP_PORT'] || 8080}"
 
@@ -29,7 +30,8 @@ class Pulp3RpmMirrorSlimmer
     logger:,
     pulp_user: 'admin',
     pulp_password: 'admin',
-    cache_dir: '.rpm-cache'
+    cache_dir: '.rpm-cache',
+    upload_chunk_size: 6291456
   )
     @build_name = build_name
     @log = logger
@@ -37,6 +39,7 @@ class Pulp3RpmMirrorSlimmer
       'simpbuildsession' => "#{build_name}-#{Time.now.strftime("%F")}",
     }
     @cache_dir = cache_dir
+    @upload_chunk_size = upload_chunk_size
 
     require 'pulpcore_client'
     require 'pulp_rpm_client'
@@ -49,7 +52,7 @@ class Pulp3RpmMirrorSlimmer
       config.host = PULP_HOST
       config.username = pulp_user
       config.password = pulp_password
-      # config.debugging = true
+      config.debugging = ENV['DEBUG'].to_s.match?(/yes|true|1/i) # TODO parameter
       # config.logger =  # Defines the logger used for debugging.
     end
 
@@ -62,17 +65,20 @@ class Pulp3RpmMirrorSlimmer
       config.host = PULP_HOST
       config.username = pulp_user
       config.password = pulp_password
-      config.debugging = ENV['DEBUG'].to_s.match?(/yes|true|1/i)
+      config.debugging = ENV['DEBUG'].to_s.match?(/yes|true|1/i) # TODO parameter
     end
 
-    @ReposAPI           = PulpRpmClient::RepositoriesRpmApi.new
-    @RemotesAPI         = PulpRpmClient::RemotesRpmApi.new
-    @RepoVersionsAPI = PulpRpmClient::RepositoriesRpmVersionsApi.new
-    @PublicationsAPI    = PulpRpmClient::PublicationsRpmApi.new
-    @DistributionsAPI   = PulpRpmClient::DistributionsRpmApi.new
-    @TasksAPI           = PulpcoreClient::TasksApi.new
-    @ContentPackageAPI = PulpRpmClient::ContentPackagesApi.new
+    @ReposAPI          = PulpRpmClient::RepositoriesRpmApi.new
+    @RemotesAPI        = PulpRpmClient::RemotesRpmApi.new
+    @RepoVersionsAPI   = PulpRpmClient::RepositoriesRpmVersionsApi.new
+    @PublicationsAPI   = PulpRpmClient::PublicationsRpmApi.new
+    @DistributionsAPI  = PulpRpmClient::DistributionsRpmApi.new
+    @ContentPackagesAPI = PulpRpmClient::ContentPackagesApi.new
     @RpmCopyAPI        = PulpRpmClient::RpmCopyApi.new
+
+    @TasksAPI          = PulpcoreClient::TasksApi.new
+    @ArtifactsAPI      = PulpcoreClient::ArtifactsApi.new
+    @UploadsAPI          = PulpcoreClient::UploadsApi.new
   end
 
   def wait_for_task_to_complete(task, opts = {})
@@ -128,16 +134,125 @@ class Pulp3RpmMirrorSlimmer
       rpm_rpm_repository = PulpRpmClient::RpmRpmRepository.new(name: name, pulp_labels: labels)
       repos_data = @ReposAPI.create(rpm_rpm_repository, opts)
     end
-    @log.success("RPM repo '#{name}' exists")
+    @log.success("Finished: Ensuring that RPM repo '#{name}' exists (idempotently)")
     @log.debug repos_data.to_hash.to_yaml
     repos_data
   end
 
 
-
-  def direct_download_rpms(repo:,rpms:[])
-    rpms.each do |rpm|
+  # Download a file directly from a URL
+  def download_file(url, dest_dir)
+    @log.info("== Ensuring file is cached: #{url} to #{dest_dir}")
+    require 'down'
+    filename = File.basename(url)
+    downloaded_file = File.join(dest_dir,filename)
+    remote_file = Down.open(url)
+    unless File.exist?(downloaded_file) && File.size(downloaded_file) == remote_file.size
+      @log.verbose("Downloading #{url} to #{downloaded_file}")
+      Down.download(url, destination: downloaded_file)
+    else
+      @log.verbose("Skipping download, already in cache: #{downloaded_file}")
     end
+    remote_file.close
+    downloaded_file
+  end
+
+  def upload_artifact(file_path)
+    file = File.open(file_path,'rb')
+    sha256sum = Digest::SHA256.hexdigest(File.read(file_path))
+
+    # Idempotency
+    existing_list = @ArtifactsAPI.list({ sha256: sha256sum })
+    if existing_list.count > 0
+      artifact = existing_list.results.first
+      @log.verbose("No need to upload '#{file_path}'; artifact already exists")
+      @log.debug("Artifact for '#{file_path}': #{artifact.pulp_href} (sha256sum: #{sha256sum}")
+      return artifact
+    end
+
+    # https://docs.pulpproject.org/pulpcore/workflows/upload-publish.html
+    upload = PulpcoreClient::Upload.new(size: file.size)
+    upload_response = @UploadsAPI.create(upload)
+
+    start_offset = 0
+    file.seek(start_offset,IO::SEEK_SET)
+
+    while data_chunk = file.read(@upload_chunk_size) do
+      Tempfile.create do |chunk_file|
+        chunk_file.write(data_chunk)
+        chunk_file.flush
+        content_range = "bytes #{start_offset}-#{file.pos - 1}/#{file.size}"
+        @log.debug("Uploading #{file_path} [#{content_range}/#{file.size}]")
+        upload_response2 = @UploadsAPI.update(
+          content_range,
+          upload_response.pulp_href,
+          chunk_file
+        )
+      end
+      start_offset = file.pos
+    end
+
+    # Finalize + create artifact from chunked upload
+    async_response = @UploadsAPI.commit(
+      upload_response.pulp_href,
+      PulpcoreClient::UploadCommit.new({sha256: sha256sum})
+    )
+    artifact_href = wait_for_create_task_to_complete(async_response.task).first
+    @ArtifactsAPI.read( artifact_href )
+  end
+
+  def upload_rpm_to_repo(file_path, repo)
+    @log.info("== Uploading #{file_path} to #{repo.name}")
+    file = File.open(file_path,'rb')
+    basename = File.basename(file_path)
+
+    artifact = upload_artifact(file_path)
+
+    # Idempotency for content & repo
+    existing_rpm_list = @ContentPackagesAPI.list({
+      sha256: artifact.sha256,
+      exclude_fields: 'files',
+    })
+    if existing_rpm_list.count > 0
+      rpm_package = existing_rpm_list.results.first
+      @log.verbose("No need to add RPM package '#{rpm_package.name}'; content unit already exists")
+      @log.debug("RPM package content unit for '#{rpm_package.name}': #{rpm_package.pulp_href} (sha256: #{artifact.sha256}")
+
+      orig_repo_version_href = @ReposAPI.read(repo.pulp_href).latest_version_href
+      content_change = PulpRpmClient::RepositoryAddRemoveContent.new({
+        add_content_units: [ rpm_package.pulp_href ],
+        base_version: orig_repo_version_href,
+      })
+      async_response = @ReposAPI.modify(repo.pulp_href, content_change)
+      rpm_rpm_repository_version_href = wait_for_create_task_to_complete(async_response.task).first || orig_repo_version_href
+      if orig_repo_version_href != rpm_rpm_repository_version_href
+        @log.info("Added RPM package '#{rpm_package.name}' to repo '#{repo.name}'")
+        @log.verbose("   Old repo version: #{orig_repo_version_href}" )
+        @log.verbose("   New repo version: #{rpm_rpm_repository_version_href}")
+      else
+        @log.verbose("RPM package '#{rpm_package.name}' already in repo '#{repo.name}'")
+      end
+      return rpm_rpm_repository_version_href
+    end
+
+    async_response = @ContentPackagesAPI.create(
+      basename, {
+        artifact: artifact.pulp_href,
+        repository: repo.pulp_href,
+      }
+    )
+    created_resources = wait_for_create_task_to_complete(
+      async_response.task, { max_expected_resources: 2 }
+    )
+    rpm_rpm_repository_version_href = created_resources.select do |x|
+      x =~ %r[pulp/api/v3/repositories/rpm/rpm/.*/versions/]
+    end.first
+
+    unless rpm_rpm_repository_version_href
+      raise 'Somehow, the content packages task created resources, but not a new RPM repository version'
+    end
+
+    return rpm_rpm_repository_version_href
   end
 
   # create & sync RPM remote to mirror repo at remote_url
@@ -173,12 +288,11 @@ class Pulp3RpmMirrorSlimmer
           mirror: true
         )
         sync_async_info = @ReposAPI.sync(repo.pulp_href, rpm_repository_sync_url)
-        created_resources = wait_for_create_task_to_complete(sync_async_info.task)
-        unless created_resources.first
-          @log.error "ERROR: RPM Repo sync did not create any resources!"
+        rpm_rpm_repository_version_href = wait_for_create_task_to_complete(sync_async_info.task).first
+        unless rpm_rpm_repository_version_href
+          @log.error "ERROR: RPM Repo sync did not create a new RPM Repo version!"
           require 'pry'; binding.pry
         end
-        rpm_rpm_repository_version_href = created_resources.first
       rescue PulpcoreClient::ApiError, PulpRpmClient::ApiError => e
         @log.error "Exception when calling API: #{e}"
         @log.warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
@@ -189,53 +303,21 @@ class Pulp3RpmMirrorSlimmer
     end
 
     unless direct_downloads.empty?
-      # read_rpm_metadata
-      #   - [ ] parse binary data as RPM header
-      #
-      # rpms_metadata_from_directory(path:)
-      #   - [ ] scan directory for rpms
-      #   - [ ] get rpm metadata
-      #   - [ ] return hash
-      #
       # add_external_rpms_to_repo(name:, repo:, rpms:)
-      # - [ ] download RPM(s) to working dir
-      # - [ ] add RPM(s) to repo --> new repo version
-      #   - [ ] upload artifact to pulp - https://pulp-rpm.readthedocs.io/en/latest/workflows/upload.html
-      #   - [ ] create rpm package content from artifact
-      #   - [ ] add content to repository (supports multiple content units)
-      require 'down'
+      # - [x] download RPM(s) to working dir
+      # - [x] add RPM(s) to repo --> new repo version
+      #   - [x] upload artifact to pulp - https://pulp-rpm.readthedocs.io/en/latest/workflows/upload.html
+      #   - [x] create rpm package content from artifact
+      #   - [x] add content to repository (supports multiple content units)
 
-      # FIXME apply to all direct download after getting it to work for one
-      rpm = direct_downloads.first
-      url = rpm['direct_url']
-      filename = File.basename(url)
-      downloaded_file = File.join(@cache_dir,filename)
-      #if File.exist?(downloaded_file) FIXME and file size is the same
-      #  @log.warn("File already in cache at #{downloaded_file}; skipping)
-      #end
-      #
-      tempfile = Down.download(url, destination: downloaded_file)
-      # TODO: check for file already?
-
-      class V < BinData::Record
-        endian :big
-        string :magic, :length => 4, :assert => "\xED\xAB\xEE\xDB".unpack('A4').first
-        uint8  :rpm_format_maj, :assert => 3
-        uint8  :rpm_format_min                 #
-        uint16 :file_type                      # should be xFF unless needed
-        uint16 :arch                           #
-        string :name, :length => 66           #
-        uint8  :os                             #
-        uint8  :signature_version              # must accept 5
-        string :reserved, :read_length => 16  # should be all zeros
-        uint8  :index_count                    # number of header index entries
-        uint8  :store_size                     # total size, in bytes, of the data store
+      repo_cache_dir = File.join(@cache_dir,repo.name)
+      downloaded_rpms = direct_downloads.map do |rpm|
+        FileUtils.mkdir_p(repo_cache_dir)
+        downloaded_file = download_file(rpm['direct_url'], repo_cache_dir)
+        rpm_rpm_repository_version_href = upload_rpm_to_repo(downloaded_file, repo)
       end
-      header_data = File.read(downloaded_file, 1024)
-      require 'bindata'
-require 'pry'; binding.pry
     end
-
+    rpm_rpm_repository_version_href
   end
 
   def ensure_rpm_publication(rpm_rpm_repository_version_href, labels = {})
@@ -302,7 +384,7 @@ require 'pry'; binding.pry
       @log.warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
       require 'pry'; binding.pry
     end
-    @log.happy("Don ensuring RPM distro '#{name}' (how did we get to this line?)")
+    @log.happy("Done ensuring RPM distro '#{name}' (how did we get to this line?)")
     @log.debug result.to_hash.to_yaml
     result
   end
@@ -443,7 +525,7 @@ require 'pry'; binding.pry
       until offset > 0 && next_url.nil? do
         @log.verbose( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
 
-        paginated_package_response_list = @ContentPackageAPI.list({
+        paginated_package_response_list = @ContentPackagesAPI.list({
           name__in: rpm_names,
           repository_version: repo_version_href,
           # TODO is this reasonable?
@@ -797,9 +879,9 @@ def parse_options
   options
 end
 
-def get_logger(log_file: 'rpm_mirror_slimmer.log')
+def get_logger(log_file: 'rpm_mirror_slimmer.log', log_level: :verbose)
   require 'logging'
-  Logging.init :debug, :verbose, :info, :happy, :warn, :success, :error, :recovery, :fatal
+  Logging.init :debug, :verbose, :info, :happy, :todo, :warn, :success, :recovery, :error, :fatal
 
   # here we setup a color scheme called 'bright'
   Logging.color_scheme(
@@ -809,6 +891,7 @@ def get_logger(log_file: 'rpm_mirror_slimmer.log')
       verbose: :blue,
       info: :cyan,
       happy: :magenta,
+      todo: %i[black on_yellow],
       warn: :yellow,
       success: :green,
       recovery: %i[black on_green],
@@ -838,7 +921,7 @@ def get_logger(log_file: 'rpm_mirror_slimmer.log')
       truncate: true
     )
   )
-  log.level = :verbose
+  log.level = log_level
   log
 end
 
