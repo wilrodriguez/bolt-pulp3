@@ -5,7 +5,7 @@
 # The summary sets the description of the plan that will appear
 # in 'bolt plan show' output. Bolt uses puppet-strings to parse the
 # summary and parameters from the plan.
-# @summary A plan created with bolt plan new.
+# @summary UNIMPLEMENTED - DOES NOTHING USEFUL
 # @param targets The targets to run on.
 plan pulp3::rpm::repo (
   TargetSpec                     $targets        = "localhost",
