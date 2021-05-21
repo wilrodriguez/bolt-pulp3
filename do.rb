@@ -174,7 +174,7 @@ class Pulp3RpmRepoSlimmer
 
     # https://docs.pulpproject.org/pulpcore/workflows/upload-publish.html
     upload = PulpcoreClient::Upload.new(size: file.size)
-    @UploadsAPI.create(upload)
+    upload_response = @UploadsAPI.create(upload)
 
     start_offset = 0
     file.seek(start_offset,IO::SEEK_SET)

@@ -28,7 +28,7 @@
 # to auto-resolve these RPMs to the best available versions or obey
 # constraints.  Make sure these are kept these up to date with new releases!
 #
-pulp-puppet:
+puppet:
   url: http://yum.puppet.com/puppet6/el/7/x86_64/ # Not used to mirror
   pulp_remote_options:
     policy: on_demand
@@ -48,7 +48,7 @@ pulp-puppet:
   - name: puppetserver
     direct_url: http://yum.puppet.com/puppet6/el/7/x86_64/puppetserver-6.15.3-1.el7.noarch.rpm
 
-pulp-os:
+os:
   url: http://mirror.centos.org/centos/7/os/x86_64/
   rpms:
   - name: apr-util-ldap
@@ -1628,13 +1628,13 @@ pulp-os:
   - name: zip
   - name: zlib
   - name: zlib-devel
-pulp-extras:
+extras:
   url: http://mirror.centos.org/centos/7/extras/x86_64/
   rpms:
   - name: createrepo_c
   - name: createrepo_c-libs
   - name: libssh
-pulp-epel:
+epel:
   url: https://dl.fedoraproject.org/pub/epel/7/x86_64/
   rpms:
   - name: caja
@@ -1712,14 +1712,16 @@ pulp-epel:
   - name: x2goserver-xsession
   - name: incron
     version: '>= 0.5.12-9' # Resolved https://bugzilla.redhat.com/show_bug.cgi?id=1656939#c14
-pulp-postgresql:
+
+postgresql:
   url: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/
   rpms:
   - name: postgresql96
   - name: postgresql96-contrib
   - name: postgresql96-libs
   - name: postgresql96-server
-pulp-simp:
+
+simp:
   url: https://download.simp-project.com/SIMP/yum/releases/latest/el/7Server/x86_64/simp/
   rpms:
   - name: HIRS_Provisioner_TPM_1_2
