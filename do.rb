@@ -718,7 +718,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
   def write_slim_repos_config_file(slim_repos, output_repo_file)
     yum_repo_file_content = slim_repos.map do |k,v|
       result = <<~REPO_ENTRY
-        [#{k}]
+        [#{v[:source_repo_name]}]
         enabled=1
         baseurl=#{v[:distro_url]}
         gpgcheck=0
@@ -734,9 +734,12 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
 
   def write_slim_repos_dnf_mirror_cmd(slim_repos, output_repo_script)
     dnf_mirror_cmd = <<~CMD_START
+      #!/bin/sh
       # On EL7, ensure:
       #    yum install -y dnf dnf-plugins-core
       #
+      set -eu
+
       # Useful EL8-only options: --remote-time --norepopath
       PATH_TO_LOCAL_MIRROR="$PWD/_download_path/#{@build_name}"
       mkdir -p "$PATH_TO_LOCAL_MIRROR"
@@ -746,8 +749,10 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
         --setopt=reposdir=/dev/null \\
       CMD_START
 
-    dnf_mirror_cmd += slim_repos.map { |k,v| "  --repofrompath #{k.sub("#{@build_name}-",'')},#{v[:distro_url]}" }.join(" \\\n")
-    dnf_mirror_cmd += " \\\n" + slim_repos.map { |k,v| "  --repoid #{k.sub("#{@build_name}-",'')}" }.join(" \\\n")
+    dnf_mirror_cmd += slim_repos.map { |k,v| "  --repofrompath #{v[:source_repo_name]},#{v[:distro_url]}" }.join(" \\\n")
+    dnf_mirror_cmd += " \\\n" + slim_repos.map { |k,v| "  --repoid #{v[:source_repo_name]}" }.join(" \\\n")
+    dnf_mirror_cmd += "\n\n" + 'printf "\nMirrored all repos into: %s\n\n" "$PATH_TO_LOCAL_MIRROR"' + "\n"
+
     @log.info "\nWriting slim_repos repo config to: '#{output_repo_script}"
     File.open(output_repo_script, 'w') { |f| f.puts dnf_mirror_cmd }
     dnf_mirror_cmd
@@ -777,7 +782,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
 
 
     # Write results to files
-    output_file = '_slim_repos.yaml'
+    output_file = "_slim_repos.#{@build_name}.yaml"
     output_repo_file = File.basename( output_file, '.yaml' ) + '.repo'
     output_repo_script = File.basename( output_file, '.yaml' ) + '.sh'
     output_repo_debug_config = File.basename( output_file, '.yaml' ) + '.internal.yaml'
