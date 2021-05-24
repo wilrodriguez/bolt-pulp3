@@ -91,6 +91,8 @@ appstream:
   - name: rpm-ostree-libs
   - name: httpd
   - name: nodejs # FIXME for testing; remove later
+    version: '~> 10.0'
+      # NOTE without version constraints, installs 13 (latest module)
 
 
 extras:
