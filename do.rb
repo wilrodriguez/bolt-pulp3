@@ -718,7 +718,8 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
   def write_slim_repos_config_file(slim_repos, output_repo_file)
     yum_repo_file_content = slim_repos.map do |k,v|
       result = <<~REPO_ENTRY
-        [#{v[:source_repo_name]}]
+        [pulp-#{v[:source_repo_name]}]
+        name=#{v[:source_repo_name]} (Slim)
         enabled=1
         baseurl=#{v[:distro_url]}
         gpgcheck=0
@@ -753,7 +754,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     dnf_mirror_cmd += " \\\n" + slim_repos.map { |k,v| "  --repoid #{v[:source_repo_name]}" }.join(" \\\n")
     dnf_mirror_cmd += "\n\n" + 'printf "\nMirrored all repos into: %s\n\n" "$PATH_TO_LOCAL_MIRROR"' + "\n"
 
-    @log.info "\nWriting slim_repos repo config to: '#{output_repo_script}"
+    @log.info "\nWriting slim_repos download script to: '#{output_repo_script}"
     File.open(output_repo_script, 'w') { |f| f.puts dnf_mirror_cmd }
     dnf_mirror_cmd
   end
@@ -810,7 +811,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       next_url = nil
 
       until offset > 0 && next_url.nil? do
-        @log.verbose( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
+        @log.debug( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
 
         paginated_package_response_list = @ContentPackagesAPI.list({
           repository_version: rpm_rpm_repository_version.pulp_href,
