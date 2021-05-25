@@ -1,5 +1,13 @@
 # Proof-of-concept Pulp3 Bolt project + modular repo mirror-slimmer
 
+<!-- vim-markdown-toc GFM -->
+
+* [Overview](#overview)
+
+<!-- vim-markdown-toc -->
+
+## Overview
+
 This repo presently contains a mishmash of at least two projects:
 
 1. A Bolt project to automate the prep/spin-up + destruction of Pulp3's
@@ -10,12 +18,12 @@ This repo presently contains a mishmash of at least two projects:
    command -v rvm && rvm use system
 
    # Install deps
-   /opt/puppetlabs/bolt/bin/bolt module install --force
-   /opt/puppetlabs/bolt/bin/gem install --user gem.deps.rb
+   /opt/puppetlabs/bolt/bin/bolt module install --force      # install modules
+   /opt/puppetlabs/bolt/bin/gem install --user gem.deps.rb   # install RubyGems
 
    # See options for the spin up/destroy plans
    /opt/puppetlabs/bolt/bin/bolt plan show pulp3::in_one_container
-   /opt/puppetlabs/bolt/bin/bolt plan show pulp3::in_one_container::destroy
+   /opt/puppetlabs/bolt/bin/bolt plan show pulp3::in_one_container::destroy files=true force=true
    ```
 
 2. A super-hacky proof-of-concept ruby script (`do.rb`) that uses Pulp to
