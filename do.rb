@@ -205,7 +205,6 @@ class Pulp3RpmRepoSlimmer
 
   def upload_rpm_to_repo(file_path, repo)
     @log.info("== Uploading #{file_path} to #{repo.name}")
-    file = File.open(file_path,'rb')
     basename = File.basename(file_path)
 
     artifact = upload_artifact(file_path)
@@ -215,6 +214,7 @@ class Pulp3RpmRepoSlimmer
       sha256: artifact.sha256,
       exclude_fields: 'files',
     })
+
     if existing_rpm_list.count > 0
       rpm_package = existing_rpm_list.results.first
       @log.verbose("No need to add RPM package '#{rpm_package.name}'; content unit already exists")
@@ -225,8 +225,12 @@ class Pulp3RpmRepoSlimmer
         add_content_units: [ rpm_package.pulp_href ],
         base_version: orig_repo_version_href,
       })
+
       async_response = @ReposAPI.modify(repo.pulp_href, content_change)
-      rpm_rpm_repository_version_href = wait_for_create_task_to_complete(async_response.task,{sleep_time: 1}).first || orig_repo_version_href
+      rpm_rpm_repository_version_href = wait_for_create_task_to_complete(
+        async_response.task,{sleep_time: 1}
+      ).first || orig_repo_version_href
+
       if orig_repo_version_href != rpm_rpm_repository_version_href
         @log.info("Added RPM package '#{rpm_package.name}' to repo '#{repo.name}'")
         @log.verbose("   Old repo version: #{orig_repo_version_href}" )
@@ -759,6 +763,23 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     dnf_mirror_cmd
   end
 
+  def write_slim_repos_dnf_repoclosure_cmd(slim_repos, output_repo_script)
+    dnf_repoclosure_cmd = <<~CMD_START
+      #!/bin/sh
+      set -eu
+      sudo dnf repoclosure \\
+      CMD_START
+
+    dnf_repoclosure_cmd += slim_repos.map { |k,v|
+
+      "  --repofrompath slim-#{v[:source_repo_name]},#{v[:distro_url]}"
+    }.join(" \\\n")
+    dnf_repoclosure_cmd += " \\\n" + slim_repos.map { |k,v| "  --repoid slim-#{v[:source_repo_name]}" }.join(" \\\n")
+
+    @log.info "\nWriting slim_repos repoclosure script to: '#{output_repo_script}"
+    File.open(output_repo_script, 'w') { |f| f.puts dnf_repoclosure_cmd }
+    dnf_repoclosure_cmd
+  end
 
   def do_use_existing(repos_to_mirror)
     pulp_labels = @pulp_labels.merge({ 'reporole' => 'slim_repo' })
@@ -786,12 +807,14 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     output_file = "_slim_repos.#{@build_name}.yaml"
     output_repo_file = File.basename( output_file, '.yaml' ) + '.repo'
     output_repo_script = File.basename( output_file, '.yaml' ) + '.sh'
+    output_repoclosure_script = File.basename( output_file, '.yaml' ) + '.repoclosure.sh'
     output_repo_debug_config = File.basename( output_file, '.yaml' ) + '.internal.yaml'
     output_versions_file = File.basename( output_file, '.yaml' ) + '.versions.yaml'
 
     write_slim_repos_debug_data(slim_repos, output_repo_debug_config)
     yum_repo_file_content = write_slim_repos_config_file(slim_repos, output_repo_file)
-    dnf_mirror_cmd = write_slim_repos_dnf_mirror_cmd(slim_repos, output_repo_script)
+    write_slim_repos_dnf_mirror_cmd(slim_repos, output_repo_script)
+    write_slim_repos_dnf_repoclosure_cmd(slim_repos, output_repoclosure_script)
 
     # Log/print slim repos
     @log.info "\nSlim repos:\n" + \
@@ -801,6 +824,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
 
     slim_repo_mirror_data = {}
 
+    # Write versions file
     slim_repos.each do |repo_name, data|
       rpm_rpm_repository_version =  get_repo_version_from_distro(repo_name)
 
