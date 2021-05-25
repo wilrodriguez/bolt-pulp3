@@ -93,6 +93,7 @@ appstream:
   - name: nodejs # FIXME for testing; remove later
     version: '~> 10.0'
       # NOTE without version constraints, installs 13 (latest module)
+  - name: 389-ds-base-legacy-tools
 
 
 extras:
@@ -145,16 +146,6 @@ epel-modular:
   #  @ epel-modular: 389-ds-base-libs
   #
   # modularity info
-  #    - only exists in 389-directory-server:stable (epel-modular)
-  #
-  - name: 389-ds-base-legacy-tools
-
-  # depends on:
-  #    baseos:       crypto-policies-scripts, libevent, perl-libs, +
-  #    appstream:    python3-bind, nss, bind-libs, perl-Mozilla-LDAP +
-  #  @ epel-modular: 389-ds-base-libs
-  #
-  # modularity info
   #  provided by:
   #    - 389-directory-server:stable (epel-modular)
   #    - 389-directory-server:stable (epel-modular)
@@ -165,9 +156,20 @@ epel-modular:
   #    perl:5.26, perl-IO-Socket-SSL:2.066, perl-libwww-perl:6.34
   - name: 389-ds-base
 
+  ### # depends on:
+  ### #    baseos:       crypto-policies-scripts, libevent, perl-libs, +
+  ### #    appstream:    python3-bind, nss, bind-libs, perl-Mozilla-LDAP +
+  ### #  @ epel-modular: 389-ds-base-libs
+  ### #
+  ### # modularity info
+  ### #    - only exists in 389-directory-server:stable (epel-modular)
+  ### #
+  ### - name: 389-ds-base-legacy-tools
+
+
 
 postgresql:
-  url: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/
+  url: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-8-x86_64/
   rpms:
     # Copied from EL7 packages FIXME: verify with EL8
   - name: postgresql96
