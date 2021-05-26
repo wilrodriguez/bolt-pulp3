@@ -268,7 +268,7 @@ class Pulp3RpmRepoSlimmer
     @log.info "== Creating remote #{name} from #{remote_url}"
 
     # If all RPMs are direct downloads, then don't sync the mirror
-    mirror = !rpms.empty? && !rpms.all?{ |rpm| rpm.key?('direct_url') }
+    mirror = rpms.empty? || !rpms.all?{ |rpm| rpm.key?('direct_url') }
     direct_downloads = rpms.select{|x| x.key?('direct_url') }
 
     rpm_rpm_repository_version_href = nil
@@ -825,6 +825,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     slim_repo_mirror_data = {}
 
     # Write versions file
+    @log.verbose( "Fetching slim_repo package versions data for each repo" )
     slim_repos.each do |repo_name, data|
       rpm_rpm_repository_version =  get_repo_version_from_distro(repo_name)
 
@@ -833,9 +834,11 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       limit = 100
       offset = 0
       next_url = nil
+      @log.verbose( "Getting versions info for repo #{data[:source_repo_unique_name]}:")
 
       until offset > 0 && next_url.nil? do
-        @log.debug( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
+        ###@log.debug( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
+        @log.verbose( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
 
         paginated_package_response_list = @ContentPackagesAPI.list({
           repository_version: rpm_rpm_repository_version.pulp_href,
@@ -1058,21 +1061,21 @@ end
 # Default label to filesystem and URL-safe version of repos_to_mirror_file path
 unless options[:pulp_distro_base_path]
   str = options[:repos_to_mirror_file].gsub(/[^a-z0-9\-\.\/]+/i, '-').sub(/\.(yaml|yml)$/i,'').sub(/^build\//i,'')
-  #base = File.basename(str)
+  base = File.basename(str)
   dirs = File.dirname(str).sub(%r{/?$},'')
-  options[:pulp_distro_base_path] = dirs
+  options[:pulp_distro_base_path] = "#{base}/#{dirs}"
 end
 
 puts options.to_yaml
 p ARGV
 
 mirror_slimmer = Pulp3RpmRepoSlimmer.new(
-  build_name: options[:pulp_session_label],
+  build_name:       options[:pulp_session_label],
   distro_base_path: options[:pulp_distro_base_path],
-  pulp_user:     options[:pulp_user],
-  pulp_password: options[:pulp_password],
-  logger: get_logger(log_file: 'rpm_mirror_slimmer.log'),
-  cache_dir: options[:cache_dir]
+  pulp_user:        options[:pulp_user],
+  pulp_password:    options[:pulp_password],
+  cache_dir:        options[:cache_dir],
+  logger:           get_logger(log_file: 'rpm_mirror_slimmer.log')
 )
 
 mirror_slimmer.do(
