@@ -1,10 +1,11 @@
+#!/opt/puppetlabs/bolt/bin/ruby
 # TODO: use pulp labels to identify repo build session/purpose for cleanup/creation
 
 require 'yaml'
 require 'fileutils'
 require 'tempfile'
 
-PULP_HOST = "http://localhost:#{ENV['PULP_PORT'] || 8080}"
+PULP_HOST = "http://localhost:#{ENV['PULP_PORT'] || `/opt/puppetlabs/bolt/bin/bolt lookup --plan-hierarchy pulp3::server_port`.strip.to_i || 8080}"
 
 # Mirrors & copies RPMs from multiple repos into "slim" subset repositories,
 #   including all RPM and modular dependencies.
@@ -294,7 +295,7 @@ class Pulp3RpmRepoSlimmer
           mirror: true
         )
         sync_async_info = @ReposAPI.sync(repo.pulp_href, rpm_repository_sync_url)
-        rpm_rpm_repository_version_href = wait_for_create_task_to_complete(sync_async_info.task).first
+        rpm_rpm_repository_version_href = wait_for_create_task_to_complete(sync_async_info.task, {max_expected_resources: 2}).first
         unless rpm_rpm_repository_version_href
           @log.error "ERROR: RPM Repo sync did not create a new RPM Repo version!"
           require 'pry'; binding.pry
