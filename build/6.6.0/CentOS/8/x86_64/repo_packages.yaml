@@ -35,17 +35,22 @@ puppet:
   # Versions last updated: 2021/05/18
   rpms:
   - name: puppet-agent
-    direct_url: http://yum.puppet.com/puppet6/el/8/x86_64/puppet-agent-6.22.1-1.el8.x86_64.rpm
+    version: '= 6.22.1'
+    #    direct_url: http://yum.puppet.com/puppet6/el/8/x86_64/puppet-agent-6.22.1-1.el8.x86_64.rpm
   - name: puppet-bolt
-    direct_url: https://yum.puppet.com/puppet6/el/8/x86_64/puppet-bolt-3.8.1-1.el8.x86_64.rpm
+    version: '~> 3.13'
+    #    direct_url: https://yum.puppet.com/puppet6/el/8/x86_64/puppet-bolt-3.8.1-1.el8.x86_64.rpm
   - name: puppet6-release
-    direct_url: http://yum.puppet.com/puppet6/el/8/x86_64/puppet6-release-6.0.0-14.el8.noarch.rpm
+    #    direct_url: http://yum.puppet.com/puppet6/el/8/x86_64/puppet6-release-6.0.0-14.el8.noarch.rpm
   - name: puppetdb
-    direct_url: http://yum.puppet.com/puppet6/el/8/x86_64/puppetdb-6.16.1-1.el8.noarch.rpm
+    version: '~> 6.16.1'
+    #    direct_url: http://yum.puppet.com/puppet6/el/8/x86_64/puppetdb-6.16.1-1.el8.noarch.rpm
   - name: puppetdb-termini
-    direct_url: http://yum.puppet.com/puppet6/el/8/x86_64/puppetdb-termini-6.16.1-1.el8.noarch.rpm
+    version: '~> 6.16.1'
+    #    direct_url: http://yum.puppet.com/puppet6/el/8/x86_64/puppetdb-termini-6.16.1-1.el8.noarch.rpm
   - name: puppetserver
-    direct_url: http://yum.puppet.com/puppet6/el/8/x86_64/puppetserver-6.15.3-1.el8.noarch.rpm
+    version: '~> 6.15.3'
+    #    direct_url: http://yum.puppet.com/puppet6/el/8/x86_64/puppetserver-6.15.3-1.el8.noarch.rpm
 baseos:
   url: http://mirror.centos.org/centos/8/BaseOS/x86_64/os/
   rpms:
