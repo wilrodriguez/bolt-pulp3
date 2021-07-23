@@ -278,16 +278,14 @@ class Pulp3RpmRepoSlimmer
       begin
         # By default, only download RPMs on demand (wait until requested)
         remote_opts = {
-          'name' => name,
-          'url' => remote_url,
-          'policy' => 'on_demand',
-          #'pulp_labels' => pulp_labels,
+          'name'            => name,
+          'url'             => remote_url,
+          'policy'          => 'on_demand',
+          #'pulp_labels'    => pulp_labels,
           #'tls_validation' => false,
-        }.merge( pulp_remote_options )
+        }.merge( pulp_remote_options ).transform_keys(&:to_sym)
 
-        rpm_rpm_remote = PulpRpmClient::RpmRpmRemote.new(
-          remote_opts.transform_keys(&:to_sym)
-        )
+        rpm_rpm_remote = PulpRpmClient::RpmRpmRemote.new(remote_opts)
         remotes_data = @RemotesAPI.create(rpm_rpm_remote)
 
         rpm_repository_sync_url = PulpRpmClient::RpmRepositorySyncURL.new(
@@ -295,7 +293,10 @@ class Pulp3RpmRepoSlimmer
           mirror: true
         )
         sync_async_info = @ReposAPI.sync(repo.pulp_href, rpm_repository_sync_url)
-        rpm_rpm_repository_version_href = wait_for_create_task_to_complete(sync_async_info.task, {max_expected_resources: 2}).first
+        # max_expected_resources went from 1 to 3 after pulp_rpm got automatic publishing (3.12+)
+        #   2 when syncing a new remote (new repo version + new publication)
+        #   3 when syncing an existing remote (new repo version + new pub + old repo version?)
+        rpm_rpm_repository_version_href = wait_for_create_task_to_complete(sync_async_info.task, {max_expected_resources: 3}).first
         unless rpm_rpm_repository_version_href
           @log.error "ERROR: RPM Repo sync did not create a new RPM Repo version!"
           require 'pry'; binding.pry
@@ -606,7 +607,6 @@ class Pulp3RpmRepoSlimmer
     missing_names = rpm_reqs.map{|r| r['name']}.uniq - results.map(&:name).uniq
     unless missing_names.empty?
       @log.fatal "\nFATAL: Repo #{repo.name} was missing #{missing_names.size} requested RPMs:\n  - #{missing_names.join("\n  - ")}\n\n"
-    require 'pry'; binding.pry
     fail "\nFATAL: Repo #{repo.name} was missing #{missing_names.size} requested RPMs:\n  - #{missing_names.join("\n  - ")}\n\n"
     end
 
@@ -629,23 +629,25 @@ class Pulp3RpmRepoSlimmer
       @log.info "== Copying RPMs into slim Repo mirrors..."
       @log.verbose "Dest repos: #{dest_repos.keys.join(', ')}"
       @log.debug config.to_yaml
+  require 'pry'; binding.pry
       copy = PulpRpmClient::Copy.new({
         config: config,
         dependency_solving: true
       })
 
       async_response = @RpmCopyAPI.copy_content(copy)
-      wait_for_task_to_complete(async_response.task)
-
       task_result = wait_for_task_to_complete(async_response.task)
+  require 'pry'; binding.pry
+
       raise PulpcoreClient::ApiError, "Pulp3 ERROR: Task #{async_response.task} failed:\n\n#{task_result.error['description']}" if task_result.state == 'failed'
+
+      @log.info "== Sucessfully copied RPMs+dependencies into dest repositories"
       async_response.task
     rescue PulpRpmClient::ApiError, PulpcoreClient::ApiError => e
       @log.error "Exception when calling API: #{e}"
       require 'pry'; binding.pry
       raise e
     end
-    @log.info "== Sucessfully copied RPMs+dependencies into dest repositories"
   end
 
   def delete_rpm_repo_mirrors(repos_to_mirror)
@@ -655,7 +657,7 @@ class Pulp3RpmRepoSlimmer
     end
   end
 
-  def do_create_new(repos_to_mirror)
+  def do_create_new_repo_mirrors(repos_to_mirror)
     # TODO: Safety check to only destroy repos if pulp labels are identical?
     pulp_labels = @pulp_labels.merge({ 'reporole' => 'remote_mirror' })
 
@@ -782,13 +784,13 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     dnf_repoclosure_cmd
   end
 
-  def do_use_existing(repos_to_mirror)
+  def do_copy_rpms_into_slim_repos(repos_to_mirror)
     pulp_labels = @pulp_labels.merge({ 'reporole' => 'slim_repo' })
     slim_repos = slim_repos_data_for(repos_to_mirror)
 
+  require 'pry'; binding.pry
     # Slim RPM copy from all repos_to_mirror to all slim_repos
-    copy_task = advanced_rpm_copy(slim_repos)
-    copy_task.inspect
+    advanced_rpm_copy(slim_repos)
 
     slim_repos.each do |name, data|
       rpm_rpm_repository_version_href = @ReposAPI.read(data[:pulp_href]).latest_version_href
@@ -876,6 +878,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
 
   def do(action:, repos_to_mirror_file:)
     repos_to_mirror = YAML.load_file(repos_to_mirror_file)
+
     labeled_repos_to_mirror = repos_to_mirror.map do |name, data|
       labeled_name = name.sub( /^/, "#{@build_name}.")
       labeled_data = data.dup
@@ -884,14 +887,17 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     end.to_h
 
     case action
-    when :delete
-      delete_rpm_repo_mirrors(labeled_repos_to_mirror)
     when :create_new
       delete_rpm_repo_mirrors(labeled_repos_to_mirror)
-      do_create_new(labeled_repos_to_mirror)
-      do_use_existing(labeled_repos_to_mirror)
+      do_create_new_repo_mirrors(labeled_repos_to_mirror)
+      do_copy_rpms_into_slim_repos(labeled_repos_to_mirror)
+    when :create_new_only
+      do_create_new_repo_mirrors(labeled_repos_to_mirror)
+      do_copy_rpms_into_slim_repos(labeled_repos_to_mirror)
     when :use_existing
-      do_use_existing(labeled_repos_to_mirror)
+      do_copy_rpms_into_slim_repos(labeled_repos_to_mirror)
+    when :delete
+      delete_rpm_repo_mirrors(labeled_repos_to_mirror)
     end
   end
 end
@@ -938,11 +944,15 @@ def parse_options
       options[:repos_to_mirror_file] = f
     end
 
-    opts.on('-n', '--create-new', 'Delete existing + Create new repo mirrors') do
+    opts.on('-n', '--create-new', 'Delete existing + create new repo mirrors + Slim rpm copy') do
       options[:action] = :create_new
     end
 
-    opts.on('-e', '--use-existing', 'Use existing repo mirrors') do
+    opts.on('-N', '--create-new-only', '(No delete) Create new repo mirrors + Slim rpm copy') do
+      options[:action] = :create_new_only
+    end
+
+    opts.on('-e', '--use-existing', 'Slim rpm copy from existing repo mirrors') do
       options[:action] = :use_existing
     end
 
