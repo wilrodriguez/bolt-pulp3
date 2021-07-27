@@ -268,6 +268,7 @@ class Pulp3RpmRepoSlimmer
   def create_rpm_repo_mirror(name:, remote_url:, repo:, pulp_remote_options: {}, pulp_labels: {}, rpms: [])
     @log.info "== Creating remote #{name} from #{remote_url}"
 
+    @log.debug "-- repo: #{repo.pulp_href}"
     # If all RPMs are direct downloads, then don't sync the mirror
     mirror = rpms.empty? || !rpms.all?{ |rpm| rpm.key?('direct_url') }
     direct_downloads = rpms.select{|x| x.key?('direct_url') }
@@ -276,27 +277,61 @@ class Pulp3RpmRepoSlimmer
     if mirror
       # Create RPM remote to mirror upstream repo
       begin
-        # By default, only download RPMs on demand (wait until requested)
-        remote_opts = {
-          'name'            => name,
-          'url'             => remote_url,
-          'policy'          => 'on_demand',
-          #'pulp_labels'    => pulp_labels,
-          #'tls_validation' => false,
-        }.merge( pulp_remote_options ).transform_keys(&:to_sym)
+        paginated_rpm_rpm_remote_response_list = @RemotesAPI.list(name: name)
+        remote_already_exists = paginated_rpm_rpm_remote_response_list.count == 1
 
-        rpm_rpm_remote = PulpRpmClient::RpmRpmRemote.new(remote_opts)
-        remotes_data = @RemotesAPI.create(rpm_rpm_remote)
+        if remote_already_exists
+          @log.verbose("No need to create RPM Remote '#{name}'; Remote already exists")
+          remotes_data = paginated_rpm_rpm_remote_response_list.results.first
+        else
+          @log.verbose("Creating RPM Remote '#{name}'")
+
+          # By default, only download RPMs on demand (wait until requested)
+          remote_opts = {
+            'name'            => name,
+            'url'             => remote_url,
+            'policy'          => 'on_demand',
+            #'pulp_labels'    => pulp_labels,
+            #'tls_validation' => false,
+          }.merge( pulp_remote_options ).transform_keys(&:to_sym)
+
+          rpm_rpm_remote = PulpRpmClient::RpmRpmRemote.new(remote_opts)
+          remotes_data = @RemotesAPI.create(rpm_rpm_remote)
+        end
+        @log.debug( "#{name}: Remote #{remotes_data.pulp_href}" )
+
+        # TODO split remote creation and repo sync into different functions
 
         rpm_repository_sync_url = PulpRpmClient::RpmRepositorySyncURL.new(
           remote: remotes_data.pulp_href,
           mirror: true
         )
+        @log.verbose("Running sync for Remote '#{name}'")
         sync_async_info = @ReposAPI.sync(repo.pulp_href, rpm_repository_sync_url)
-        # max_expected_resources went from 1 to 3 after pulp_rpm got automatic publishing (3.12+)
-        #   2 when syncing a new remote (new repo version + new publication)
-        #   3 when syncing an existing remote (new repo version + new pub + old repo version?)
-        rpm_rpm_repository_version_href = wait_for_create_task_to_complete(sync_async_info.task, {max_expected_resources: 3}).first
+
+        rpm_rpm_repository_version_href = nil
+        if remote_already_exists
+          task_result = wait_for_task_to_complete(sync_async_info.task)
+          if task_result.created_resources.empty? && task_result.progress_reports.first.code == 'sync.was_skipped'
+            @log.verbose("Sync skipped for Remote '#{name}' (using href '#{repo.latest_version_href})'")
+            rpm_rpm_repository_version_href = repo.latest_version_href
+          end
+        end
+
+        unless rpm_rpm_repository_version_href
+          # max_expected_resources went from 1 to 3 after pulp_rpm got automatic publishing (3.12+)
+          #   2 when syncing a new remote (new repo version + new publication)
+          #   3 when syncing an existing remote (new repo version + new pub + old repo version?)
+          begin
+            created_resources = wait_for_create_task_to_complete(sync_async_info.task, {max_expected_resources: 3})
+            # NOTE Pulp now auto-creates 1-2 publications with the rpm version
+            rpm_rpm_repository_version_href = created_resources.select{ |x| x =~ %r[^/pulp/api/v3/repositories/rpm/rpm/.*/versions/] }.first
+          rescue RuntimeError => e
+            @log.error "Exception when calling API: #{e}"
+            require 'pry'; binding.pry
+          end
+        end
+
         unless rpm_rpm_repository_version_href
           @log.error "ERROR: RPM Repo sync did not create a new RPM Repo version!"
           require 'pry'; binding.pry
@@ -325,6 +360,7 @@ class Pulp3RpmRepoSlimmer
         rpm_rpm_repository_version_href = upload_rpm_to_repo(downloaded_file, repo)
       end
     end
+    @log.debug( "-- create_rpm_repo_mirror: returning rpm_rpm_repository_version_href: '#{rpm_rpm_repository_version_href}'" )
     rpm_rpm_repository_version_href
   end
 
@@ -553,6 +589,7 @@ class Pulp3RpmRepoSlimmer
         offset += paginated_package_response_list.results.size
         next_url = paginated_package_response_list._next
         api_result_count = paginated_package_response_list.count
+        require 'pry'; binding.pry if paginated_package_response_list.results.size == 0
       end
     end
 
@@ -1012,7 +1049,7 @@ def parse_options
   options
 end
 
-def get_logger(log_file: 'rpm_mirror_slimmer.log', log_level: :verbose)
+def get_logger(log_file: 'rpm_mirror_slimmer.log', log_level: :debug)
   require 'logging'
   Logging.init :debug, :verbose, :info, :happy, :todo, :warn, :success, :recovery, :error, :fatal
 
@@ -1039,7 +1076,8 @@ def get_logger(log_file: 'rpm_mirror_slimmer.log', log_level: :verbose)
   log = Logging.logger[Pulp3RpmRepoSlimmer]
   log.add_appenders(
     Logging.appenders.stdout(
-      layout: Logging.layouts.pattern(color_scheme: 'bright')
+      layout: Logging.layouts.pattern(color_scheme: 'bright'),
+      level: log_level
     ),
     Logging.appenders.rolling_file(
       "#{File.basename(log_file,'.log')}.debug.log",
@@ -1054,7 +1092,6 @@ def get_logger(log_file: 'rpm_mirror_slimmer.log', log_level: :verbose)
       truncate: true
     )
   )
-  log.level = log_level
   log
 end
 

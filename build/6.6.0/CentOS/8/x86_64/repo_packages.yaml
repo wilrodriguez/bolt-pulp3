@@ -209,6 +209,7 @@ extras:
 
 epel:
   url: https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
+  url: https://sjc.edge.kernel.org/fedora-buffet/epel/8/Everything/x86_64/
   rpms:
   - name: htop        # no deps
   - name: vim-ansible # depends on appstream: vim-filesystem
