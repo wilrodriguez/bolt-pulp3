@@ -350,7 +350,7 @@ class Pulp3RpmRepoSlimmer
       @log.warn "===> #{e}\n\n#{e.backtrace.join("\n").gsub(/^/, '    ')}\n\n==> INVESTIGATE WITH PRY"
       require 'pry'; binding.pry
     end
-    @log.info( "== Ensuring RPM plublication exists for RPM version  #{rpm_rpm_repository_version_href}" )
+    @log.info( "== Ensuring RPM publication exists for RPM version  #{rpm_rpm_repository_version_href}" )
      @PublicationsAPI.read( pub_href )
   end
 
@@ -629,7 +629,6 @@ class Pulp3RpmRepoSlimmer
       @log.info "== Copying RPMs into slim Repo mirrors..."
       @log.verbose "Dest repos: #{dest_repos.keys.join(', ')}"
       @log.debug config.to_yaml
-  require 'pry'; binding.pry
       copy = PulpRpmClient::Copy.new({
         config: config,
         dependency_solving: true
@@ -637,7 +636,6 @@ class Pulp3RpmRepoSlimmer
 
       async_response = @RpmCopyAPI.copy_content(copy)
       task_result = wait_for_task_to_complete(async_response.task)
-  require 'pry'; binding.pry
 
       raise PulpcoreClient::ApiError, "Pulp3 ERROR: Task #{async_response.task} failed:\n\n#{task_result.error['description']}" if task_result.state == 'failed'
 
@@ -788,7 +786,6 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     pulp_labels = @pulp_labels.merge({ 'reporole' => 'slim_repo' })
     slim_repos = slim_repos_data_for(repos_to_mirror)
 
-  require 'pry'; binding.pry
     # Slim RPM copy from all repos_to_mirror to all slim_repos
     advanced_rpm_copy(slim_repos)
 

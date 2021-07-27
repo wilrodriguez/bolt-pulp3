@@ -46,22 +46,55 @@ baseos:
   url: http://mirror.centos.org/centos/8/BaseOS/x86_64/os/
   rpms:
   - name: NetworkManager # depends on baseos: NetworkManager-libnm, libndp
+  - name: at
+  - name: autofs
   - name: centos-indexhtml
   - name: centos-logos
   - name: centos-logos-httpd
   - name: centos-obsolete-packages
-  - name: systemd
-  - name: selinux-policy-targeted
-  - name: setools-console
+  - name: chrony
+  - name: cronie
+  - name: crontabs
+  - name: gssproxy
+  - name: gzip
+  - name: kexec-tools
+  - name: logrotate
+  - name: logwatch
+  - name: lshw
+  - name: lsof
+  - name: lsscsi
+  - name: lvm2
+  - name: man-db
+  - name: man-pages
+  - name: mcstrans
+  - name: mdadm
+  - name: mlocate
+  - name: net-snmp-libs
+  - name: net-tools
+  - name: nfs4-acl-tools
+  - name: nfs-utils
+  - name: openssh
+  - name: openssh-cavs
+  - name: openssh-clients
+  - name: openssh-keycat
+  - name: openssh-ldap
+  - name: openssh-server
+  - name: openssl
+  - name: openssl-devel
+  - name: openssl-ibmpkcs11
+  - name: openssl-libs
+  - name: openssl-pkcs11
+  - name: policycoreutils
+  - name: polkit
+  - name: polkit-docs
+  - name: postfix
   - name: quota
+  - name: quota-rpc
   - name: readline
   - name: readline-devel
-  - name: rsync
-  - name: rsync
   - name: rpm-apidocs
   - name: rpm-build-libs
   - name: rpm-cron
-  - name: rpm-devel
   - name: rpm-devel
   - name: rpm-libs
   - name: rpm-plugin-ima
@@ -70,22 +103,67 @@ baseos:
   - name: rpm-plugin-syslog
   - name: rpm-plugin-systemd-inhibit
   - name: rpm-sign
+  - name: rsync
+  - name: selinux-policy
+  - name: selinux-policy-devel
+  - name: selinux-policy-targeted
+  - name: setools-console
+  - name: sssd
+  - name: sssd-client
+  - name: sssd-nfs-idmap
+  - name: sssd-polkit-rules
+  - name: sssd-tools
+  - name: sssd-winbind-idmap
+  - name: sudo
+  - name: systemd
+  - name: samba-client
+  - name: unzip
+
 
 
 
 appstream:
   url: http://mirror.centos.org/centos/8/AppStream/x86_64/os/
   rpms:
-  - name: 389-ds-base # depends on lots of things from baseos: cracklib-dicts,selinux-policy +
+  - name: acpid
   - name: centos-backgrounds
   - name: centos-logos-ipa
-  - name: vim-enhanced
+  - name: jq
+  - name: libreswan
+  - name: lua
+  - name: net-snmp
+  - name: net-snmp-agent-libs
+  - name: net-snmp-utils
+  - name: nss
+  - name: nmap
+  - name: oddjob
+  - name: oddjob-mkhomedir
+  - name: openscap
+  - name: openscap-devel
+  - name: openscap-engine-sce
+  - name: openscap-python3
+  - name: openscap-scanner
+  - name: openscap-utils
+  - name: openssh-askpass
+  - name: redhat-lsb
   - name: rpm-build
   - name: rpm-mpi-hooks
   - name: rpm-ostree
   - name: rpm-ostree-libs
-  - name: rpm-ostree-libs
+  - name: rpm-plugin-fapolicyd
+  - name: scap-security-guide
+  - name: tigervnc
+  - name: tigervnc-server
+  - name: vim-enhanced
+  # modular RPMs:
+  - name: mysql-server
+  - name: freeradius
   - name: httpd
+  - name: mod_auth_gssapi     # apache mod
+  - name: mod_lookup_identity # apache mod
+  - name: mod_session         # apache mod
+  - name: mod_ssl             # apache mod
+  - name: 389-ds-base # depends on lots of things from baseos: cracklib-dicts,selinux-policy +
   - name: nodejs # FIXME for testing; remove later
     version: '~> 10.0'
       # NOTE without version constraints, installs 13 (latest module)
@@ -126,12 +204,35 @@ extras:
   - name: centos-release-stream
   - name: centos-release-virt-common
   - name: centos-stream-repos
+  - name: elrepo-release
+  - name: epel-next-release
 
 epel:
   url: https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
   rpms:
   - name: htop        # no deps
   - name: vim-ansible # depends on appstream: vim-filesystem
+  - name: vim-airline
+  - name: vim-powerline
+  - name: vim-jellybeans
+  - name: liboath
+  - name: oathtool
+  - name: libnfs
+  - name: pam_oath
+  - name: redhat-display-fonts
+  - name: redhat-mono-fonts
+  - name: redhat-text-fonts
+  - name: rubygem-highline
+  - name: rubygem-net-ldap
+  - name: incron
+  - name: haveged
+  - name: dkms
+  - name: clamav
+  - name: clamav-update
+  - name: clamd
+  - name: pwgen
+  - name: rkhunter
+  - name: openssh-ldap-authkeys # AuthorizedKeysCommand script for LDAP
 
 epel-modular:
   url: https://dl.fedoraproject.org/pub/epel/8/Modular/x86_64/
