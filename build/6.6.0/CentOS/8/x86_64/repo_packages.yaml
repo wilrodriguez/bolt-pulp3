@@ -55,6 +55,9 @@ baseos:
   - name: chrony
   - name: cronie
   - name: crontabs
+  - name: dnf
+  - name: dnf-automatic
+  - name: dnf-plugins-core
   - name: gssproxy
   - name: gzip
   - name: kexec-tools
@@ -70,7 +73,6 @@ baseos:
   - name: mdadm
   - name: mlocate
   - name: net-snmp-libs
-  - name: net-tools
   - name: nfs4-acl-tools
   - name: nfs-utils
   - name: openssh
@@ -84,7 +86,9 @@ baseos:
   - name: openssl-ibmpkcs11
   - name: openssl-libs
   - name: openssl-pkcs11
+  - name: perl-interpreter
   - name: policycoreutils
+  - name: policycoreutils-python-utils
   - name: polkit
   - name: polkit-docs
   - name: postfix
@@ -118,8 +122,7 @@ baseos:
   - name: systemd
   - name: samba-client
   - name: unzip
-
-
+  - name: util-linux
 
 
 appstream:
@@ -228,6 +231,7 @@ epel:
   - name: incron
   - name: haveged
   - name: dkms
+  - name: dnf-plugin-ovl
   - name: clamav
   - name: clamav-update
   - name: clamd
