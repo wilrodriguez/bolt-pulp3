@@ -50,8 +50,7 @@ class SlimModuleMdFixer
   def slim_modulemd(repo_dir)
     doc = Nokogiri::XML.parse( File.read(@repomd_xml) )
     modules_stream_path = get_repomd_xml_data_path(doc, 'modules')
-
-    modules_stream = load_repomd_data_file(path)
+    modules_stream = load_repomd_data_file(modules_stream_path)
     filelists_doc = load_repomd_data_file(get_repomd_xml_data_path(doc, 'filelists'))
     primary_doc = load_repomd_data_file(get_repomd_xml_data_path(doc, 'primary'))
 
