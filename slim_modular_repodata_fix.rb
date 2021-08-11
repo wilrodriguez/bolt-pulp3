@@ -27,13 +27,21 @@ class SlimModuleMdFixer
 
 
   def load_repomd_data_file(path)
-    if File.basename(path).split('.').last =~ /\A(yaml|yml)\Z/
-      return YAML.load_stream(File.read(path))
+    _path = path.dup
+    _data = File.read(path)
+    if File.basename(_path).split('.').last == 'gz'
+      _path.gsub!(/\.gz$/,'')
+      _data = gunzip(_data)
     end
 
-    if File.basename(path).split('.')[-2..-1] ==  ["xml", "gz"]
-      return( Nokogiri::XML.parse(gunzip(File.read(path))) )
+    if File.basename(_path).split('.').last == 'xml'
+      return( Nokogiri::XML.parse(_data))
     end
+
+    if File.basename(_path).split('.').last == 'yaml'
+      return YAML.load_stream(_data)
+    end
+
     raise("Don't know how to read type of file at '#{path}'")
   end
 
@@ -47,7 +55,7 @@ class SlimModuleMdFixer
     path
   end
 
-  def slim_modulemd(repo_dir)
+  def slim_modulemd
     doc = Nokogiri::XML.parse( File.read(@repomd_xml) )
     modules_stream_path = get_repomd_xml_data_path(doc, 'modules')
     modules_stream = load_repomd_data_file(modules_stream_path)
@@ -64,15 +72,17 @@ class SlimModuleMdFixer
           @log.error("Could not parse NEVRA from rpm name: #{rpm}")
           require 'pry'; binding.pry
         end
-        conditions = nevra.named_captures.map {|k,v| "xmlns:version/@#{k}='#{v}'" }.join(' and ')
-        e = primary_doc.xpath("//xmlns:package[xmlns:name='#{nevra[:name]}' and #{conditions} ]", primary_doc.namespaces)
+
+        elem_conditions = nevra.named_captures.select{|k,v| ['name','arch'].include?(k) }.map {|k,v| "xmlns:#{k}='#{v}'" }.join(' and ')
+        attr_conditions = nevra.named_captures.reject{|k,v| ['name','arch'].include?(k) }.map {|k,v| "xmlns:version/@#{k}='#{v}'" }.join(' and ')
+        e = primary_doc.xpath("//xmlns:package[#{elem_conditions} and #{attr_conditions}]", primary_doc.namespaces)
         !e.empty?
       end
       mod_stream['data']['artifacts']['rpms'] = new_rpms
       mod_stream
     end
 
-    backup_modules_stream_path = "#{modules_stream_path}.#{Time.now.strftime("%F")}"
+    backup_modules_stream_path = "#{modules_stream_path}.#{Time.now.strftime("%F")}.yaml"
     FileUtils.cp modules_stream_path, backup_modules_stream_path, verbose: true
 
     fixed_mod_stream_yaml = YAML.dump_stream(*fixed_mod_stream)
@@ -80,13 +90,16 @@ class SlimModuleMdFixer
     # TODO 
     # - [ ] write modules.yaml
     # - [ ] re-build repo with createrepo_c - OR - update repomd.xml with the right values
-
-  require 'pry'; binding.pry
+    Dir.mktmpdir do |tmpdir|
+      full_path = File.join(tmpdir,'modules.yaml')
+      File.write(full_path,fixed_mod_stream_yaml)
+      cmd = %Q[modifyrepo_c --mdtype=modules --no-compress "#{full_path}" "#{@repodata_dir}"]
+      @log.info "Running:\n\n\t#{cmd}\n"
+      puts %x[#{cmd}]
+    end
 
   end
 end
-
-repo_dir  = ARGV.first || '_download_path/build-6-6-0-centos-8-x86-64-repo-packages/appstream/'
 
 def get_logger(log_file: 'rpm.slim_modulemd_repodata_fix.log', log_level: :debug)
   require 'logging'
@@ -134,10 +147,13 @@ def get_logger(log_file: 'rpm.slim_modulemd_repodata_fix.log', log_level: :debug
   log
 end
 
+repo_dir  = ARGV.first || '_download_path/build-6-6-0-centos-8-x86-64-repo-packages/epel-modular'
+repo_dir  = ARGV.first || '_download_path/build-6-6-0-centos-8-x86-64-repo-packages/appstream'
 
 fixer = SlimModuleMdFixer.new(
   repo_dir: repo_dir,
   logger: get_logger,
 )
 
-fixer.slim_modulemd(repo_dir)
+fixer.slim_modulemd
+puts "FINIS"
