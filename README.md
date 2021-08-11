@@ -18,8 +18,8 @@ This repo presently contains a mishmash of at least two projects:
    command -v rvm && rvm use system
 
    # Install deps
-   /opt/puppetlabs/bolt/bin/bolt module install --force      # install modules
-   /opt/puppetlabs/bolt/bin/gem install --user gem.deps.rb   # install RubyGems
+   /opt/puppetlabs/bolt/bin/bolt module install --force        # install modules
+   /opt/puppetlabs/bolt/bin/gem install --user -g gem.deps.rb  # install RubyGems
 
    # See options for the spin up/destroy plans
    /opt/puppetlabs/bolt/bin/bolt plan show pulp3::in_one_container
