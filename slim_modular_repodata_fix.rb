@@ -25,9 +25,23 @@ class SlimModuleMdFixer
     Zlib::Inflate.new(window_size).inflate(data)
   end
 
-  def read_repomd_data_file(doc, type)
+
+  def load_repomd_data_file(path)
+    if File.basename(path).split('.').last =~ /\A(yaml|yml)\Z/
+      return YAML.load_stream(File.read(path))
+    end
+
+    if File.basename(path).split('.')[-2..-1] ==  ["xml", "gz"]
+      return( Nokogiri::XML.parse(gunzip(File.read(path))) )
+    end
+    raise("Don't know how to read type of file at '#{path}'")
+  end
+
+  def get_repomd_xml_data_path(doc, type)
+    doc = doc.dup
+    doc.remove_namespaces! # bad form, but there's only one and I'm in a hurry
     _path = doc.xpath(%Q[//data[@type="#{type}"]/location/@href]).text
-    fail("can't find '#{type}' data in #{@repomd_pathml}") if _path.empty?
+    fail("can't find '#{type}' data in #{@repomd_xml}") if _path.empty?
     path = File.join(@repo_dir,_path)
     File.file?(path) || fail("No #{type} file at '#{modules_yaml}'")
     path
@@ -35,17 +49,47 @@ class SlimModuleMdFixer
 
   def slim_modulemd(repo_dir)
     doc = Nokogiri::XML.parse( File.read(@repomd_xml) )
-    doc.remove_namespaces! # bad form, but there's only one and I'm in a hurry
-    modules_yaml = read_repomd_data_file(doc, 'modules')
-    modulemd = YAML.load_file(modules_yaml)
-    require 'pry'; binding.pry
+    modules_stream_path = get_repomd_xml_data_path(doc, 'modules')
+
+    modules_stream = load_repomd_data_file(path)
+    filelists_doc = load_repomd_data_file(get_repomd_xml_data_path(doc, 'filelists'))
+    primary_doc = load_repomd_data_file(get_repomd_xml_data_path(doc, 'primary'))
+
+    fixed_mod_stream = modules_stream.map do |mod_stream|
+      rpms = mod_stream['data']['artifacts']['rpms']
+      new_rpms = rpms.select do |rpm|
+        next(nil) if rpm =~ /\.src\Z/
+        nevra = rpm.match(/\A(?<name>.+?)-(?<epoch>\d+):(?<ver>.+?)-(?<rel>\d+.*)\.(?<arch>[^.]+)\Z/)
+
+        unless nevra
+          @log.error("Could not parse NEVRA from rpm name: #{rpm}")
+          require 'pry'; binding.pry
+        end
+        conditions = nevra.named_captures.map {|k,v| "xmlns:version/@#{k}='#{v}'" }.join(' and ')
+        e = primary_doc.xpath("//xmlns:package[xmlns:name='#{nevra[:name]}' and #{conditions} ]", primary_doc.namespaces)
+        !e.empty?
+      end
+      mod_stream['data']['artifacts']['rpms'] = new_rpms
+      mod_stream
+    end
+
+    backup_modules_stream_path = "#{modules_stream_path}.#{Time.now.strftime("%F")}"
+    FileUtils.cp modules_stream_path, backup_modules_stream_path, verbose: true
+
+    fixed_mod_stream_yaml = YAML.dump_stream(*fixed_mod_stream)
+    #File.open(modules_stream_path,'w'){|f| f.puts fixed_mod_stream}
+    # TODO 
+    # - [ ] write modules.yaml
+    # - [ ] re-build repo with createrepo_c - OR - update repomd.xml with the right values
+
+  require 'pry'; binding.pry
 
   end
 end
 
 repo_dir  = ARGV.first || '_download_path/build-6-6-0-centos-8-x86-64-repo-packages/appstream/'
 
-def get_logger(log_file: 'slim_modulemd_repodata_fix.log', log_level: :debug)
+def get_logger(log_file: 'rpm.slim_modulemd_repodata_fix.log', log_level: :debug)
   require 'logging'
   Logging.init :debug, :verbose, :info, :happy, :todo, :warn, :success, :recovery, :error, :fatal
 
