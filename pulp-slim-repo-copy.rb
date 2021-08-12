@@ -614,7 +614,7 @@ class Pulp3RpmRepoSlimmer
       n_rpms.map{|r| r.arch }.uniq.each do |arch|
         na_rpms = n_rpms.select{|r| r.arch == arch }
 
-        # pick the best version (NEVR) for each arc
+        # pick the best RPM version (NEVR) for each arc
         nevr_rpms = na_rpms.sort do |a,b|
           next(a.epoch <=> b.epoch) unless ((a.epoch <=> b.epoch) == 0)
           next(a.version <=> b.version) unless ((a.version <=> b.version) == 0)
@@ -843,9 +843,9 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     # Write results to files
     output_file = "_slim_repos.#{@build_name}.yaml"
     output_repo_file = File.basename( output_file, '.yaml' ) + '.repo'
-    output_repo_script = File.basename( output_file, '.yaml' ) + '.sh'
+    output_repo_script = File.basename( output_file, '.yaml' ) + 'reposync.sh'
     output_repoclosure_script = File.basename( output_file, '.yaml' ) + '.repoclosure.sh'
-    output_repo_debug_config = File.basename( output_file, '.yaml' ) + '.internal.yaml'
+    output_repo_debug_config = File.basename( output_file, '.yaml' ) + '.api_items.yaml'
     output_versions_file = File.basename( output_file, '.yaml' ) + '.versions.yaml'
 
     write_slim_repos_debug_data(slim_repos, output_repo_debug_config)
