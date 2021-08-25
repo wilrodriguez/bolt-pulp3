@@ -5,6 +5,9 @@
 * [Overview](#overview)
   * [Setup](#setup)
     * [Setup Requirements](#setup-requirements)
+      * [OS requirements](#os-requirements)
+      * [Runtime dependencies](#runtime-dependencies)
+      * [Things to AVOID](#things-to-avoid)
     * [Initial setup](#initial-setup)
     * [Beginning with the repo slimmer](#beginning-with-the-repo-slimmer)
   * [Usage](#usage)
@@ -24,45 +27,84 @@
 
 ### Setup
 
-
 #### Setup Requirements
 
-* [Puppet Bolt 3.12+][bolt], installed from an [OS package][bolt-install]
-  * EL7/EL7/Fedora RPM: `puppet-bolt`
-  * **Note:** Use the Bolt installation provided by the OS package; DO NOT use
-    a bolt gem installed by RubyGems
+The following components are needed to use all the features of this project.
 
-* Some EL commands must be available to download and fix
+##### OS requirements
+
+* [Puppet Bolt 3.12+][bolt], installed from an [official OS package][bolt-install] (DO NOT use a `bolt` gem installed by RubyGems)
+  * Instructions for [installing Puppet Bolt][bolt-install] ([RHEL-specific
+    instructions][bolt-install-rhel])
+
+* The [podman] or [docker] runtimes are required to run the Pulp-in-one-container:
+  * [installing podman on el8]
+  * [installing podman on el7]
+  * [installing docker on centos]
+  * [installing docker on fedora]
+
+* Some OS commands must be available to download and fix
   `modules.yaml` in later scripts:
-  * `modifyrepo_c` (EL7 RPMs: `modifyrepo_c`)
-  * `dnf reposync` (EL7 RPMs: `dnf-plugins-core`)
 
-* Runtime dependencies, installed with Bolt (see next section):
+  * `modifyrepo_c`
+  * `dnf reposync`
+
+  On EL7, you can install these commands with:
+
+    ```
+    sudo yum install -y createrepo_c dnf-plugins-core
+    ```
+
+* You may also need to install `gcc` in order for Bolt to compile native ruby
+  gems during `/opt/puppetlabs/bolt/bin/gem install --user -g gem.deps.rb`:
+
+  * `gcc`
+
+  On EL7, you can install these commands with:
+
+    ```
+    sudo yum install -y gcc
+    ```
+
+##### Runtime dependencies
+
+These dependencies can be installed by Bolt (see the [Initial
+setup](#initial-setup) section)
+
   * Puppet modules (defined in bolt project's `bolt-project.yaml`)
   * Ruby Gems (defined in `gem.deps.rb`)
 
+##### Things to AVOID
+
+* Do NOT use the `bolt` executable/libraries installed by RubyGems
+* Do NOT use an RVM-managed version of Ruby (it overwrites gem paths and
+  conflicts with the OS bolt)
+
+
 #### Initial setup
 
-1. Install any OS packages needed to provide the requirements listed above
+1. Install any packages needed to provide the
+   [OS requirements](#os-requirements).
 
-2. Before running any plans, from the top level of this repository:
+2. Before running any plans for the first time, run these commands from the top
+   level of this repository:
 
-```sh
-# RVM users: make sure you're running the OS-installed `bolt`, and not a gem:
-command -v rvm && rvm use system
+   ```sh
+   # RVM users: make sure you're running the OS-installed `bolt`, and not a gem:
+   command -v rvm && rvm use system
 
-# Install dependencies
-/opt/puppetlabs/bolt/bin/bolt module install --force        # install Puppet modules
-/opt/puppetlabs/bolt/bin/gem install --user -g gem.deps.rb  # install RubyGems
+   # Install dependencies
+   /opt/puppetlabs/bolt/bin/bolt module install --force        # install Puppet modules
+   /opt/puppetlabs/bolt/bin/gem install --user -g gem.deps.rb  # install RubyGems
 
- # Verify `pulp3::` plans are visible
-bolt plan show
+    # Verify `pulp3::` plans are visible
+   bolt plan show
 
-# See options for the provision / destroy plans
-/opt/puppetlabs/bolt/bin/bolt plan show pulp3::in_one_container
-/opt/puppetlabs/bolt/bin/bolt plan show pulp3::in_one_container::destroy
+   # See options for the provision / destroy plans
+   /opt/puppetlabs/bolt/bin/bolt plan show pulp3::in_one_container
+   /opt/puppetlabs/bolt/bin/bolt plan show pulp3::in_one_container::destroy
 
-```
+   ```
 
 
 #### Beginning with the repo slimmer
@@ -224,3 +266,10 @@ This repo presently contains a mishmash of several projects that aid the same wo
 [bolt]: https://puppet.com/docs/bolt/latest/bolt.html
 [puppet]: https://puppet.com/docs/puppet/latest/
 [bolt-install]: https://puppet.com/docs/bolt/latest/bolt_installing.html
+[bolt-install-rhel]: https://puppet.com/docs/bolt/latest/bolt_installing.html#install-bolt-on-rhel
+[podman]: https://podman.io
+[installing podman on el8]: https://podman.io/getting-started/installation#rhel8
+[installing podman on el7]: https://podman.io/getting-started/installation#rhel7
+[docker]: https://docker.io
+[installing docker on centos]: https://docs.docker.com/engine/install/centos/
+[installing docker on fedora]: https://docs.docker.com/engine/install/fedora/
