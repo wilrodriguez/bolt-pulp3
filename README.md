@@ -14,7 +14,7 @@
     * [(Bolt) Provisioning the Pulp container](#bolt-provisioning-the-pulp-container)
     * [(Script) `pulp-slim-repo-copy.rb` - Use Pulp to create slim repo mirrors](#script-pulp-slim-repo-copyrb---use-pulp-to-create-slim-repo-mirrors)
     * [(Script) `_*.reposync.sh`: Mirror all slim repos into a local directory](#script-_reposyncsh-mirror-all-slim-repos-into-a-local-directory)
-    * [(Script) `slim-modular-repodata-fix.rb`: Fix modulemd data in local slim repos](#script-slim-modular-repodata-fixrb-fix-modulemd-data-in-local-slim-repos)
+    * [(Script) `fix-local-slim-modular-repos.rb`: Fix modulemd data in local slim repos](#script-fix-local-slim-modular-reposrb-fix-modulemd-data-in-local-slim-repos)
     * [(You) Taking the repos and building SIMP](#you-taking-the-repos-and-building-simp)
     * [(Bolt) Destroying the Pulp container](#bolt-destroying-the-pulp-container)
       * [Destroying container, but preserving mount data (persist Pulp data)](#destroying-container-but-preserving-mount-data-persist-pulp-data)
@@ -181,18 +181,18 @@ _download_path2
     └── puppet
 ```
 
-#### (Script) `slim-modular-repodata-fix.rb`: Fix modulemd data in local slim repos
+#### (Script) `fix-local-slim-modular-repos.rb`: Fix modulemd data in local slim repos
 
 This fixes modular repos' slimmed RPM metadata in the repos downloaded under
 `_download_path/<namespace>/` that was created by the `.reposync.sh` script(s):
 
 ```sh
-./slim-modular-repodata-fix.rb [ROOT_DIR_OF_REPOS]
+./fix-local-slim-modular-repos.rb [ROOT_DIR_OF_REPOS]
 ```
 
 `[ROOT_DIR_OF_REPOS]` defaults to `_download_path/build-6-6-0-centos-8-x86-64-repo-packages/`
 
-You don't need to run `slim-modular-repodata-fix.rb` for EL7, because it
+You don't need to run `fix-local-slim-modular-repos.rb` for EL7, because it
 doesn't have any modular repos.
 
 
@@ -212,7 +212,7 @@ Pulp-in-one-container and―optionally―all of its mounts and state data:
 
 ##### Destroying container, but preserving mount data (persist Pulp data)
 
-Note: This destroys the keeps all of Pulp's state (database files, pids, mirrored rpeo data)
+Note: This keeps all of Pulp's state (database files, pids, mirrored repo data)
 intact.  If you provision another container, it will re-mount and re-use this
 data
 
@@ -222,6 +222,11 @@ bolt plan run pulp3::in_one_container::destroy
 
 
 ##### Destroying both container and mounts w/state files (reset Pulp data)
+
+Note: This DESTROYS all of Pulp's state (database files, pids, mirrored repo
+data) intact.  If you provision another container, it will re-mount and re-use
+this data
+
 
 ```sh
 bolt plan run pulp3::in_one_container::destroy \
