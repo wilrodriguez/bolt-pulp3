@@ -12,7 +12,7 @@
     * [Beginning with the repo slimmer](#beginning-with-the-repo-slimmer)
   * [Usage](#usage)
     * [(Bolt) Provisioning the Pulp container](#bolt-provisioning-the-pulp-container)
-    * [(Script) `pulp-slim-repo-copy.rb` - Use Pulp to create slim repo mirrors](#script-pulp-slim-repo-copyrb---use-pulp-to-create-slim-repo-mirrors)
+    * [(Script) `slim-pulp-repo-copy.rb` - Use Pulp to create slim repo mirrors](#script-slim-pulp-repo-copyrb---use-pulp-to-create-slim-repo-mirrors)
     * [(Script) `_*.reposync.sh`: Mirror all slim repos into a local directory](#script-_reposyncsh-mirror-all-slim-repos-into-a-local-directory)
     * [(Script) `fix-local-slim-modular-repos.rb`: Fix modulemd data in local slim repos](#script-fix-local-slim-modular-reposrb-fix-modulemd-data-in-local-slim-repos)
     * [(You) Taking the repos and building SIMP](#you-taking-the-repos-and-building-simp)
@@ -24,6 +24,37 @@
 
 ## Overview
 
+This repo contains tools to create a full (probably repo-closed) "slim" copy of
+all upstream yum repos required to support a self-contained SIMP release.
+
+This includes:
+
+* Bolt plans to provision, configure, and destroy a local
+  [Pulp-in-one-container]
+* Two Ruby scripts:
+  1. `slim-pulp-repo-copy.rb` ― uses Pulp to create, copy, and depsolve all
+     desired RPMs from upstream repos into "slim" repo mirrors
+  2. `fix-local-slim-modular-repos.rb` ― fixea modular repo data in a local
+     'slimmed' repo directories
+
+<!--
+This repo presently contains a mishmash of several projects that aid the same workflow:
+
+1. A Bolt project to automate the prep/spin-up + destruction of Pulp3's
+   "Pulp-in-one-container":
+
+2. A super-hacky proof-of-concept ruby script (`slim-pulp-repo-copy.rb`) that uses Pulp to
+   mirror, slim, and output data/scripts to download a release's required RPMs
+   into modular-safe "slim" repos.
+
+   **Note:** this script was originally a simple MVP proof-of-concept script
+   to see if we could automate the Pulp API, but scheduling & circumstances
+   have jammed an entire RELENG tool on top of that (in a single, hideous
+   mega-class), resulting in the labyrinthine effrontery you see here.
+
+   It is NOT a productized tool and will need to be refactored (possibly
+   puppetized) before adding it to the RELENG tool suite.
+-->
 
 ### Setup
 
@@ -122,63 +153,83 @@ so you use the Bolt installation provided by the OS package.
 bolt plan run pulp3::in_one_container
 ```
 
-#### (Script) `pulp-slim-repo-copy.rb` - Use Pulp to create slim repo mirrors
+#### (Script) `slim-pulp-repo-copy.rb` - Use Pulp to create slim repo mirrors
 
 Mirror, filter, and resolve upstream repos into new "slim" repos for a distro:
 
+
+**Usage**
+
 ```sh
 # See options for the ruby script
-./pulp-slim-repo-copy.rb --help
+./slim-pulp-repo-copy.rb --help
 
 # Use Pulp to create slim versions of upstream repos
-./pulp-slim-repo-copy.rb --create-new --repos-rpms-file build/6.6.0/CentOS/8/x86_64/repo_packages.yaml
+./slim-pulp-repo-copy.rb --create-new --repos-rpms-file build/6.6.0/CentOS/8/x86_64/repo_packages.yaml
 ```
 
-Run `ls -lart` to see the log files the run created.  A finished run will
-create helper files (the names will change based on the file you used):
+**Input file**
 
-* `_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.reposync.sh`: Script
-  pre-configured to mirror all the recently-created slim repos into local
-  `_download_path` directory
-* `_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.repoclosure.sh`:
-  Pre-build reposynce CLI (EL7 only; cannot help with modular repos)
-* `_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.versions.yaml`: Basic
-  SBOM summary of each package from each repository
-* `_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.api_items.yaml`: Debug
-  data, with Pulp API URIs of the slim repos that were created
+* A `repo_packages.yaml` file for a SIMP release (ex:
+  `build/6.6.0/CentOS/8/x86_64/repo_packages.yaml`)
+
+**Output files**
+
+The script will create helper files (the names will change based
+on the input file used):
+
+* **`_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.reposync.sh`**:
+  * Script pre-configured to mirror all the recently-created slim repos into
+    local `_download_path` directory
+* **`_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.repoclosure.sh`**:
+  * Pre-build reposynce CLI (EL7 only; cannot help with modular repos)
+* **`_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.versions.yaml`**:
+  * Basic SBOM summary of each package from each repository
+* **`_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.api_items.yaml`**:
+  * Debug data, detailing the Pulp API URIs of the slim repos that were created
 
 
 #### (Script) `_*.reposync.sh`: Mirror all slim repos into a local directory
 
-Run the `_*.reposync.sh` script created by a `slim_repo_copy.rb` session to
-mirror all of its repos and metadata.
+Run the `_*.reposync.sh` script created by `slim-pulp-repo-copy.rb` to mirror
+all of its repos and metadata into a local directory.
+
+**Usage**
 
 ```sh
 bash _slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.reposync.sh
 ```
 
-This will mirror all repos for the distro into a local `_download_path/`
-directory, with a subdirectory for the distro being mirrored.  If you mirror a
-centos7 and centos8 distro and run both of their `..reposync.sh` scripts, you
-will end up with a directory structure like this:
+**Output**
+
+The script creates:
+* a local `_download_path/` directory
+* a subdirectory for the distro being mirrored (e.g.,
+  `build-6-6-0-centos-8-x86-64-repo-packages/`)
+* a directory containing a local mirror of each repo (e..g, `appstream/`,
+  `epel/`)
+
+The `_download_path/` directory can contain multiple distros. If you mirror a
+centos7 and centos8 distro and run the `_*.reposync.sh` scripts they both
+generate, you will end up with a directory structure like this:
 
 ```
-_download_path2
-├── build-6-6-0-centos-7-x86-64-repo-packages
-│   ├── epel
-│   ├── extras
-│   ├── os
-│   ├── postgresql
-│   ├── puppet
-│   └── simp
-└── build-6-6-0-centos-8-x86-64-repo-packages
-    ├── appstream
-    ├── baseos
-    ├── epel
-    ├── epel-modular
-    ├── extras
-    ├── postgresql
-    └── puppet
+_download_path/
+├── build-6-6-0-centos-7-x86-64-repo-packages/
+│   ├── epel/
+│   ├── extras/
+│   ├── os/
+│   ├── postgresql/
+│   ├── puppet/
+│   └── simp/
+└── build-6-6-0-centos-8-x86-64-repo-packages/
+    ├── appstream/
+    ├── baseos/
+    ├── epel/
+    ├── epel-modular/
+    ├── extras/
+    ├── postgresql/
+    └── puppet/
 ```
 
 #### (Script) `fix-local-slim-modular-repos.rb`: Fix modulemd data in local slim repos
@@ -243,31 +294,7 @@ destroyed).
 
 
 
-This repo presently contains a mishmash of several projects that aid the same workflow:
-
-1. A Bolt project to automate the prep/spin-up + destruction of Pulp3's
-   "Pulp-in-one-container":
-
-2. A super-hacky proof-of-concept ruby script (`pulp-slim-repo-copy.rb`) that uses Pulp to
-   mirror, slim, and output data/scripts to download a release's required RPMs
-   into modular-safe "slim" repos.
-
-
-
-
-   Output files include:
-   * A `.sh` script to download all the slim repos
-   * A DNF `.config` file with all repos,
-   * An early attempt at release SBOM content in a `.yaml` file.
-
-   **Note:** this script was originally a simple MVP proof-of-concept script
-   to see if we could automate the Pulp API, but scheduling & circumstances
-   have jammed an entire RELENG tool on top of that (in a single, hideous
-   mega-class), resulting in the labyrinthine effrontery you see here.
-
-   It is NOT a productized tool and will need to be refactored (possibly
-   puppetized) before adding it to the RELENG tool suite.
-
+[Pulp-in-one-container]: https://pulpproject.org/pulp-in-one-container/
 [bolt]: https://puppet.com/docs/bolt/latest/bolt.html
 [puppet]: https://puppet.com/docs/puppet/latest/
 [bolt-install]: https://puppet.com/docs/bolt/latest/bolt_installing.html
