@@ -168,6 +168,14 @@ Mirror, filter, and resolve upstream repos into new "slim" repos for a distro:
 ./slim-pulp-repo-copy.rb --create-new --repos-rpms-file build/6.6.0/CentOS/8/x86_64/repo_packages.yaml
 ```
 
+After the script completes, run the following to check if there were problems
+while resolving RPM dependencies during the Advanced RPM Copy:
+
+```sh
+grep -v -E '_call_with_frames_removed|Attempting to start' run/django-info.log | grep -E 'WARNING'
+```
+
+
 **Input file**
 
 * A `repo_packages.yaml` file for a SIMP release (ex:
@@ -175,18 +183,16 @@ Mirror, filter, and resolve upstream repos into new "slim" repos for a distro:
 
 **Output files**
 
-The script will create helper files (the names will change based
-on the input file used):
+The script will create helper files (the names will change based on the input
+file used):
 
-* **`_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.reposync.sh`**:
-  * Script pre-configured to mirror all the recently-created slim repos into
-    local `_download_path` directory
-* **`_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.repoclosure.sh`**:
-  * Pre-build reposynce CLI (EL7 only; cannot help with modular repos)
-* **`_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.versions.yaml`**:
-  * Basic SBOM summary of each package from each repository
-* **`_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.api_items.yaml`**:
-  * Debug data, detailing the Pulp API URIs of the slim repos that were created
+| Output File                        | Purpose                                                                                                   |
+| ---                                | ---                                                                                                       |
+| **`_slim_repos.*.reposync.sh`**    | Script pre-configured to mirror all the recently-created slim repos into local `_download_path` directory |
+| **`_slim_repos.*.repoclosure.sh`** | Pre-builit reposync command for all repos (EL7 only; cannot help with modular repos)                      |
+| **`_slim_repos.*.repo`**           | YUM `.repo` file, containing all slim repos that were created                                             |
+| **`_slim_repos.*.versions.yaml`**  | Basic SBOM summary of each package from each repository                                                   |
+| **`_slim_repos.*.api_items.yaml`** | Debug data, detailing the Pulp API URIs of the slim repos that were created                               |
 
 
 #### (Script) `_*.reposync.sh`: Mirror all slim repos into a local directory

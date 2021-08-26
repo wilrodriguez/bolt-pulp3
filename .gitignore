@@ -30,3 +30,12 @@
 /inventory.yaml
 /.modules/
 /.resource_types/
+/_slim_repos*.sh
+/_slim_repos*.yaml
+/_slim_repos*.repo
+/_download_path/
+/run/
+/scripts/
+/settings/
+/pulp_storage/
+/.plan_cache.json

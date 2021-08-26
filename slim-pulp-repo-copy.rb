@@ -843,7 +843,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     # Write results to files
     output_file = "_slim_repos.#{@build_name}.yaml"
     output_repo_file = File.basename( output_file, '.yaml' ) + '.repo'
-    output_repo_script = File.basename( output_file, '.yaml' ) + 'reposync.sh'
+    output_repo_script = File.basename( output_file, '.yaml' ) + '.reposync.sh'
     output_repoclosure_script = File.basename( output_file, '.yaml' ) + '.repoclosure.sh'
     output_repo_debug_config = File.basename( output_file, '.yaml' ) + '.api_items.yaml'
     output_versions_file = File.basename( output_file, '.yaml' ) + '.versions.yaml'
