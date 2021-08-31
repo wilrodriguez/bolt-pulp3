@@ -1,6 +1,7 @@
 #!/opt/puppetlabs/bolt/bin/ruby
 # TODO: use pulp labels to identify repo build session/purpose for cleanup/creation
 
+require 'uri'
 require 'yaml'
 require 'fileutils'
 require 'tempfile'
@@ -44,6 +45,12 @@ class Pulp3RpmRepoSlimmer
     @cache_dir = cache_dir
     @upload_chunk_size = upload_chunk_size
 
+    begin
+      pulp_host_uri = URI(PULP_HOST)
+    rescue
+      $stderr.puts("PULP_HOST must be a valid URI: #{e}")
+    end
+
     require 'pulpcore_client'
     require 'pulp_rpm_client'
 
@@ -53,6 +60,7 @@ class Pulp3RpmRepoSlimmer
     #
     PulpcoreClient.configure do |config|
       config.host = PULP_HOST
+      config.scheme = pulp_host_uri.scheme
       config.username = pulp_user
       config.password = pulp_password
       config.debugging = ENV['DEBUG'].to_s.match?(/yes|true|1/i) # TODO parameter
@@ -66,6 +74,7 @@ class Pulp3RpmRepoSlimmer
     #
     PulpRpmClient.configure do |config|
       config.host = PULP_HOST
+      config.scheme = pulp_host_uri.scheme
       config.username = pulp_user
       config.password = pulp_password
       config.debugging = ENV['DEBUG'].to_s.match?(/yes|true|1/i) # TODO parameter
@@ -1092,6 +1101,7 @@ def get_logger(log_file: 'rpm_mirror_slimmer.log', log_level: :debug)
       truncate: true
     )
   )
+
   log
 end
 
