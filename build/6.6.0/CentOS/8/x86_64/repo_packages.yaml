@@ -48,6 +48,7 @@ baseos:
   - name: NetworkManager # depends on baseos: NetworkManager-libnm, libndp
   - name: at
   - name: autofs
+  - name: audisp-plugins
   - name: centos-indexhtml
   - name: centos-logos
   - name: centos-logos-httpd
@@ -60,6 +61,7 @@ baseos:
   - name: dnf-plugins-core
   - name: gssproxy
   - name: gzip
+  - name: iptables-services
   - name: kexec-tools
   - name: logrotate
   - name: logwatch
@@ -108,14 +110,24 @@ baseos:
   - name: rpm-plugin-systemd-inhibit
   - name: rpm-sign
   - name: rsync
+  - name: rsync-daemon
   - name: selinux-policy
   - name: selinux-policy-devel
   - name: selinux-policy-targeted
   - name: setools-console
   - name: sssd
+  - name: sssd-ad
   - name: sssd-client
+  - name: sssd-common
+  - name: sssd-common-pac
+  - name: sssd-ipa
+  - name: sssd-kcm
+  - name: sssd-krb5
+  - name: sssd-krb5-common
+  - name: sssd-ldap
   - name: sssd-nfs-idmap
   - name: sssd-polkit-rules
+  - name: sssd-proxy
   - name: sssd-tools
   - name: sssd-winbind-idmap
   - name: sudo
@@ -131,14 +143,15 @@ appstream:
   - name: acpid
   - name: centos-backgrounds
   - name: centos-logos-ipa
+  - name: genisoimage
   - name: jq
   - name: libreswan
   - name: lua
   - name: net-snmp
   - name: net-snmp-agent-libs
   - name: net-snmp-utils
-  - name: nss
   - name: nmap
+  - name: nss
   - name: oddjob
   - name: oddjob-mkhomedir
   - name: openscap
@@ -157,6 +170,7 @@ appstream:
   - name: scap-security-guide
   - name: tigervnc
   - name: tigervnc-server
+  - name: tlog
   - name: vim-enhanced
   # modular RPMs:
   - name: mysql-server
@@ -166,6 +180,7 @@ appstream:
   - name: mod_lookup_identity # apache mod
   - name: mod_session         # apache mod
   - name: mod_ssl             # apache mod
+  - name: ruby
   - name: 389-ds-base # depends on lots of things from baseos: cracklib-dicts,selinux-policy +
   - name: nodejs # FIXME for testing; remove later
     version: '~> 10.0'
@@ -209,6 +224,11 @@ extras:
   - name: centos-stream-repos
   - name: elrepo-release
   - name: epel-next-release
+
+powertools:
+  url: http://mirror.centos.org/centos/8/PowerTools/x86_64/os/
+  rpms:
+    - name: elinks
 
 epel:
   url: https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
@@ -313,9 +333,6 @@ postgresql:
 ###   - name: simp-vendored-r10k-gem-r10k
 ###   - name: simp-vendored-r10k-gem-semantic_puppet
 ###   - name: simp-vendored-r10k-gem-text
-###   - name: sudosh2
-###   - name: tlog
-###   - name: tpm_module
 ###   # Missing from first cut
 ###   - name: pupmod-aboe-chrony
 ###   - name: pupmod-camptocamp-kmod
