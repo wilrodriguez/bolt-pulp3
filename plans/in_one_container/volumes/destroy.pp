@@ -20,7 +20,7 @@ plan pulp3::in_one_container::volumes::destroy (
 ) {
   apply(
     $host,
-    '_description' => 'Ensure volumes exist for pulp container',
+    '_description' => 'Remove container volumes',
     '_noop' => $noop,
     '_catch_errors' => false,
   ){
