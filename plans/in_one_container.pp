@@ -49,10 +49,6 @@ plan pulp3::in_one_container (
     }
   )
 
-  $selinux_suffix = $host.facts['selinux_enforced'] ? {
-    true    => ':Z',
-    default => '',
-  }
   $start_cmd = @("START_CMD"/n)
     ${runtime_exe} run --detach \
       --name "${container_name}" \
@@ -60,11 +56,11 @@ plan pulp3::in_one_container (
       --publish-all \
       --log-driver journald \
       --device /dev/fuse \
-      --volume "pulp-settings:/etc/pulp${selinux_suffix}" \
-      --volume "pulp-storage:/var/lib/pulp${selinux_suffix}" \
-      --volume "pulp-pgsql:/var/lib/pgsql${selinux_suffix}" \
-      --volume "pulp-containers:/var/lib/containers${selinux_suffix}" \
-      --volume "pulp-run:/run${selinux_suffix}" \
+      --volume "pulp-settings:/etc/pulp" \
+      --volume "pulp-storage:/var/lib/pulp" \
+      --volume "pulp-pgsql:/var/lib/pgsql" \
+      --volume "pulp-containers:/var/lib/containers" \
+      --volume "pulp-run:/run" \
       "${container_image}"
     | START_CMD
 
