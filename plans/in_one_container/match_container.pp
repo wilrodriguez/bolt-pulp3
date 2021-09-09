@@ -1,6 +1,6 @@
 # @summary Create local directories for Pulp-in-one-container
 # @param host A single host to configure
-# @private true
+# @api private
 #
 # Details at https://pulpproject.org/pulp-in-one-container/
 plan pulp3::in_one_container::match_container(

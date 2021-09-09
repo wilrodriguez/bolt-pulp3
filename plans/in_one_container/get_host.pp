@@ -1,6 +1,6 @@
 # @summary Manage a Pulp-in-one-container
 # @param targets A single target to run on (the container host)
-# @private true
+# @api private
 plan pulp3::in_one_container::get_host (
   TargetSpec           $targets         = "localhost",
   String[1]            $container_name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},

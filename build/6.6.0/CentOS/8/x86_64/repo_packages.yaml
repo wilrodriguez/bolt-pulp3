@@ -48,7 +48,7 @@ baseos:
   - name: NetworkManager # depends on baseos: NetworkManager-libnm, libndp
   - name: at
   - name: autofs
-  - name: audisp-plugins
+  - name: audispd-plugins
   - name: centos-indexhtml
   - name: centos-logos
   - name: centos-logos-httpd

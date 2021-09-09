@@ -3,18 +3,19 @@
 # @param volume_names
 #   The Volumes to destroy
 #
-# @private true
+# @api private
 #
 # Details at https://pulpproject.org/pulp-in-one-container/
 plan pulp3::in_one_container::volumes::destroy (
   TargetSpec $host,
   String[1] $runtime_exe,
+  String[1] $container_name,
   Array[String[1]] $volume_names = [
-    'pulp-containers',
-    'pulp-pgsql',
-    'pulp-run',
-    'pulp-settings',
-    'pulp-storage'
+    'containers',
+    'pgsql',
+    'run',
+    'settings',
+    'storage'
   ],
   Boolean $noop = false,
 ) {
@@ -25,9 +26,11 @@ plan pulp3::in_one_container::volumes::destroy (
     '_catch_errors' => false,
   ){
     $volume_names.each |String $volume_name| {
-      exec { "Destroy ${volume_name}":
-        command => "${runtime_exe} volume rm ${volume_name}",
-        onlyif => "${runtime_exe} volume inspect ${volume_name}",
+      $_vname = "${container_name}-${volume_name}"
+
+      exec { "Destroy ${_vname}":
+        command => "${runtime_exe} volume rm ${_vname}",
+        onlyif => "${runtime_exe} volume inspect ${_vname}",
         path    => [
           '/bin',
           '/usr/bin'

@@ -3,19 +3,20 @@
 # @param volume_names
 #   The Volumes to create
 #
-# @private true
+# @api private
 #
 # Details at https://pulpproject.org/pulp-in-one-container/
 plan pulp3::in_one_container::volumes::create (
   TargetSpec $host,
   String[1] $runtime_exe,
   Stdlib::Port $container_port,
+  String[1] $container_name,
   Array[String[1]] $volume_names = [
-    'pulp-containers',
-    'pulp-pgsql',
-    'pulp-run',
-    'pulp-settings',
-    'pulp-storage'
+    'containers',
+    'pgsql',
+    'run',
+    'settings',
+    'storage'
   ],
   Boolean $noop = false,
 ) {
@@ -26,9 +27,11 @@ plan pulp3::in_one_container::volumes::create (
     '_catch_errors' => false,
   ){
     $volume_names.each |String $volume_name| {
-      exec { "Create ${volume_name}":
-        command => "${runtime_exe} volume create ${volume_name}",
-        unless  => "${runtime_exe} volume inspect ${volume_name}",
+      $_vname = "${container_name}-${volume_name}"
+
+      exec { "Create ${_vname}":
+        command => "${runtime_exe} volume create ${_vname}",
+        unless  => "${runtime_exe} volume inspect ${_vname}",
         path    => [
           '/bin',
           '/usr/bin'
