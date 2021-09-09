@@ -45,6 +45,7 @@ plan pulp3::in_one_container (
     'pulp3::in_one_container::volumes::create', {
       'host'           => $host,
       'runtime_exe'    => $runtime_exe,
+      'container_name' => $container_name,
       'container_port' => $container_port
     }
   )

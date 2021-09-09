@@ -62,8 +62,9 @@ plan pulp3::in_one_container::destroy (
     $_volume_rm_result = run_plan(
       'pulp3::in_one_container::volumes::destroy',
       {
-        'host'        => $host,
-        'runtime_exe' => $runtime_exe,
+        'host'           => $host,
+        'runtime_exe'    => $runtime_exe,
+        'container_name' => $container_name
       }
     )
   }
