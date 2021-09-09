@@ -850,12 +850,15 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
 
 
     # Write results to files
-    output_file = "_slim_repos.#{@build_name}.yaml"
-    output_repo_file = File.basename( output_file, '.yaml' ) + '.repo'
-    output_repo_script = File.basename( output_file, '.yaml' ) + '.reposync.sh'
-    output_repoclosure_script = File.basename( output_file, '.yaml' ) + '.repoclosure.sh'
-    output_repo_debug_config = File.basename( output_file, '.yaml' ) + '.api_items.yaml'
-    output_versions_file = File.basename( output_file, '.yaml' ) + '.versions.yaml'
+    output_dir = 'output'
+    FileUtils.mkdir_p(output_dir)
+
+    output_file = File.join(output_dir, "_slim_repos.#{@build_name}.yaml")
+    output_repo_file = File.join(output_dir, File.basename( output_file, '.yaml' ) + '.repo')
+    output_repo_script = File.join(output_dir, File.basename( output_file, '.yaml' ) + '.reposync.sh')
+    output_repoclosure_script = File.join(output_dir, File.basename( output_file, '.yaml' ) + '.repoclosure.sh')
+    output_repo_debug_config = File.join(output_dir, File.basename( output_file, '.yaml' ) + '.api_items.yaml')
+    output_versions_file = File.join(output_dir, File.basename( output_file, '.yaml' ) + '.versions.yaml')
 
     write_slim_repos_debug_data(slim_repos, output_repo_debug_config)
     yum_repo_file_content = write_slim_repos_config_file(slim_repos, output_repo_file)
@@ -1058,7 +1061,7 @@ def parse_options
   options
 end
 
-def get_logger(log_file: 'rpm_mirror_slimmer.log', log_level: :debug)
+def get_logger(log_dir: 'logs', log_file: 'rpm_mirror_slimmer.log', log_level: :debug)
   require 'logging'
   Logging.init :debug, :verbose, :info, :happy, :todo, :warn, :success, :recovery, :error, :fatal
 
@@ -1082,6 +1085,8 @@ def get_logger(log_file: 'rpm_mirror_slimmer.log', log_level: :debug)
     message: :magenta
   )
 
+  FileUtils.mkdir_p(log_dir)
+
   log = Logging.logger[Pulp3RpmRepoSlimmer]
   log.add_appenders(
     Logging.appenders.stdout(
@@ -1089,13 +1094,13 @@ def get_logger(log_file: 'rpm_mirror_slimmer.log', log_level: :debug)
       level: log_level
     ),
     Logging.appenders.rolling_file(
-      "#{File.basename(log_file,'.log')}.debug.log",
+      "#{File.join(log_dir, File.basename(log_file,'.log'))}.debug.log",
       level: :debug,
       layout: Logging.layouts.pattern(backtrace: true),
       truncate: true
     ),
     Logging.appenders.rolling_file(
-      "#{File.basename(log_file,'.log')}.info.log",
+      "#{File.join(log_dir, File.basename(log_file,'.log'))}.info.log",
       level: :info,
       layout: Logging.layouts.pattern(backtrace: true),
       truncate: true

@@ -34,8 +34,8 @@ This includes:
 * Two Ruby scripts:
   1. `slim-pulp-repo-copy.rb` ― uses Pulp to create, copy, and depsolve all
      desired RPMs from upstream repos into "slim" repo mirrors
-  2. `fix-local-slim-modular-repos.rb` ― fixea modular repo data in a local
-     'slimmed' repo directories
+  2. `fix-local-slim-modular-repos.rb` ― fixes modular repo data in a local
+     'slimmed' repo directory
 
 <!--
 This repo presently contains a mishmash of several projects that aid the same workflow:
