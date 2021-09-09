@@ -33,7 +33,7 @@ plan pulp3::in_one_container::destroy (
   )
 
   $ls_a_result = run_command(
-    "${runtime_exe} container ls -f Name='${container_name}' --format='{{.Image}} {{.Names}}' | grep '${container_image}'",
+    "${runtime_exe} container ls -af name='${container_name}' --format='{{.Image}} {{.Names}}' | grep '${container_image}'",
     $host,
     { '_catch_errors' =>  true }
   )
