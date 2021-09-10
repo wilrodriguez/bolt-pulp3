@@ -19,7 +19,7 @@ require 'tempfile'
 require 'nokogiri'
 require 'terminal-table'
 
-def get_logger(log_file: 'rpm.slim_modulemd_repodata_fix.log', log_level: :debug)
+def get_logger(log_dir: 'logs', log_file: 'rpm.slim_modulemd_repodata_fix.log', log_level: :debug)
   require 'logging'
   Logging.init :debug2, :debug, :verbose, :info, :happy, :todo, :warn, :success, :recovery, :error, :fatal
 
@@ -32,6 +32,8 @@ def get_logger(log_file: 'rpm.slim_modulemd_repodata_fix.log', log_level: :debug
     message: :magenta
   )
 
+  FileUtils.mkdir_p(log_dir)
+
   log = Logging.logger[SlimModuleMdFixer]
   log.add_appenders(
     Logging.appenders.stdout(
@@ -39,17 +41,11 @@ def get_logger(log_file: 'rpm.slim_modulemd_repodata_fix.log', log_level: :debug
       level: log_level
     ),
     Logging.appenders.rolling_file(
-      "#{File.basename(log_file,'.log')}.debug2.log",
+      "#{File.join(log_dir, File.basename(log_file,'.log'))}.debug2.log",
       level: :debug2,
       layout: Logging.layouts.pattern(backtrace: true),
       truncate: true
-    ),
-    #Logging.appenders.rolling_file(
-    #  "#{File.basename(log_file,'.log')}.info.log",
-    #  level: :info,
-    #  layout: Logging.layouts.pattern(backtrace: true),
-    #  truncate: true
-    #)
+    )
   )
   log
 end
@@ -235,7 +231,3 @@ repos_fixer = MultiSlimModuleMdsFixer.new(
   logger: get_logger( log_level: :verbose )
 )
 repos_fixer.fix_modulemds_in_subdirs
-
-
-
-

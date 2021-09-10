@@ -5,15 +5,15 @@
 #
 # @param targets A single target to run on (the container host)
 plan pulp3::in_one_container::destroy (
-  TargetSpec           $targets         = "localhost",
-  String[1]            $user            = system::env('USER'),
-  Stdlib::AbsolutePath $container_root  = system::env('PWD'),
-  String[1]            $container_name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
-  String[1]            $container_image = lookup('pulp3::in_one_container::container_image')|$k|{'pulp/pulp'},
-  Stdlib::Port         $container_port  = lookup('pulp3::in_one_container::container_port')|$k|{8080},
-  Optional[Enum[podman,docker]] $runtime = undef,
-  Boolean $force = false,
-  Boolean $files = false,
+  TargetSpec                    $targets         = "localhost",
+  String[1]                     $user            = system::env('USER'),
+  Stdlib::AbsolutePath          $container_root  = system::env('PWD'),
+  String[1]                     $container_name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
+  String[1]                     $container_image = lookup('pulp3::in_one_container::container_image')|$k|{'pulp/pulp'},
+  Stdlib::Port                  $container_port  = lookup('pulp3::in_one_container::container_port')|$k|{8080},
+  Optional[Enum[podman,docker]] $runtime         = undef,
+  Boolean                       $force           = false,
+  Boolean                       $volumes         = false,
 ) {
   $host = get_target($targets)
   run_plan('facts', 'targets' => $host)
@@ -33,13 +33,12 @@ plan pulp3::in_one_container::destroy (
   )
 
   $ls_a_result = run_command(
-    "${runtime_exe} container ls -a --format='{{.Image}}  {{.ID}}  {{.Names}}'",
+    "${runtime_exe} container ls -af name='${container_name}' --format='{{.Image}} {{.Names}}' | grep '${container_image}'",
     $host,
+    { '_catch_errors' =>  true }
   )
 
-  $container_exists = $ls_a_result[0].value['stdout'].split("\n").any |$x| {
-    $x.match("^${container_image}.*${container_name}$" )
-  }
+  $container_exists = ($ls_a_result[0].value['stdout'].split("\n").length > 0)
 
   unless $container_exists{
     out::message( "Cannot find container '${container_name}'" )
@@ -59,17 +58,19 @@ plan pulp3::in_one_container::destroy (
     $rm_result = run_command("${runtime_exe} container rm -f ${container_name}", $host)
   }
 
-  unless $files {
-    out::message('Skipping removal of local file mounts (enable with `files=true`')
+  if $volumes {
+    $_volume_rm_result = run_plan(
+      'pulp3::in_one_container::volumes::destroy',
+      {
+        'host'           => $host,
+        'runtime_exe'    => $runtime_exe,
+        'container_name' => $container_name
+      }
+    )
+  }
+  else {
+    out::message('Skipping removal of volumes (enable with `volumes=true`')
     out::message('Exiting plan...')
     return undef
-  }
-
-  unless $container_root.strip.empty or $container_root == '/' {
-    $rm_directories_result = run_command(
-      "rm -rf '${container_root}/run' '${container_root}/settings' '${container_root}/pulp_storage' '${container_root}/containers' '${container_root}/pgsql'",
-      $host,
-      {'_run_as' => 'root'},
-    )
   }
 }
