@@ -32,17 +32,13 @@ plan pulp3::in_one_container::destroy (
     }
   )
 
-  $ls_a_result = run_command(
-    "${runtime_exe} container ls -af name='${container_name}' --format='{{.Image}} {{.Names}}' | grep '${container_image}'",
-    $host,
-    { '_catch_errors' =>  true }
-  )
-
-  $container_exists = ($ls_a_result[0].value['stdout'].split("\n").length > 0)
-
-  unless $container_exists{
-    out::message( "Cannot find container '${container_name}'" )
-  }else{
+  if run_plan( 'pulp3::in_one_container::match_container', {
+    'host'        => $host,
+    'name'        => $container_name,
+    'image'       => $container_image,
+    'all'         => true,
+    'runtime_exe' => $runtime_exe
+  }){
     unless $force {
       $confirm = prompt::menu(
         "Destroy container '${container_name}'?",
@@ -56,6 +52,9 @@ plan pulp3::in_one_container::destroy (
     }
     out::message( "Destroying container '${container_name}'..." )
     $rm_result = run_command("${runtime_exe} container rm -f ${container_name}", $host)
+  }
+  else {
+    out::message( "Cannot find container '${container_name}'" )
   }
 
   if $volumes {
