@@ -16,7 +16,7 @@ plan pulp3::in_one_container (
     [ "${container_root}/run/ISOs/unpacked" ]
   },
 ) {
-  $host = run_plan('pulp3::in_one_container::get_host', 'targets'              => $targets, 'runtime' => $runtime)
+  $host = run_plan('pulp3::in_one_container::get_host', 'targets' => $targets, 'runtime' => $runtime)
   $runtime_exe            = $host.facts['pioc_runtime_exe']
   $apply_el7_docker_fixes = $host.facts['pioc_apply_el7_docker_fixes']
 
@@ -33,6 +33,7 @@ plan pulp3::in_one_container (
     'host'  => $host,
     'name'  => $container_name,
     'image' => $container_image,
+    'port'  => $container_port,
     'all'   => true,
   }){
     out::message( "Restarting stopped container '${container_name}'..." )
@@ -57,11 +58,11 @@ plan pulp3::in_one_container (
       --publish-all \
       --log-driver journald \
       --device /dev/fuse \
-      --volume "pulp-settings:/etc/pulp" \
-      --volume "pulp-storage:/var/lib/pulp" \
-      --volume "pulp-pgsql:/var/lib/pgsql" \
-      --volume "pulp-containers:/var/lib/containers" \
-      --volume "pulp-run:/run" \
+      --volume "${container_name}-settings:/etc/pulp" \
+      --volume "${container_name}-storage:/var/lib/pulp" \
+      --volume "${container_name}-pgsql:/var/lib/pgsql" \
+      --volume "${container_name}-containers:/var/lib/containers" \
+      --volume "${container_name}-run:/run" \
       "${container_image}"
     | START_CMD
 
