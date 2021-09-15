@@ -814,7 +814,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     dnf_repoclosure_cmd = <<~CMD_START
       #!/bin/sh
       set -eu
-      sudo dnf repoclosure \\
+      dnf repoclosure \\
       CMD_START
 
     dnf_repoclosure_cmd += slim_repos.map { |k,v|
@@ -864,6 +864,8 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     yum_repo_file_content = write_slim_repos_config_file(slim_repos, output_repo_file)
     write_slim_repos_dnf_mirror_cmd(slim_repos, output_repo_script)
     write_slim_repos_dnf_repoclosure_cmd(slim_repos, output_repoclosure_script)
+    FileUtils.chmod('ug+x', output_repo_script)
+    FileUtils.chmod('ug+x', output_repoclosure_script)
 
     # Log/print slim repos
     @log.info "\nSlim repos:\n" + \
@@ -955,7 +957,7 @@ def parse_options
   require 'optparse'
 
   options = {
-    action: :use_existing,
+    action: :create_new_only,
     repos_to_mirror_file: nil,
     # FIXME: change/require?
     pulp_session_label: nil,

@@ -42,7 +42,7 @@ puppet:
   - name: puppetserver
     version: '~> 6.15.3'
 
-baseos:
+BaseOS:
   url: http://mirror.centos.org/centos/8/BaseOS/x86_64/os/
   rpms:
   - name: NetworkManager # depends on baseos: NetworkManager-libnm, libndp
@@ -59,6 +59,7 @@ baseos:
   - name: dnf
   - name: dnf-automatic
   - name: dnf-plugins-core
+  - name: grub2-tools-minimal
   - name: gssproxy
   - name: gzip
   - name: iptables-services
@@ -133,20 +134,29 @@ baseos:
   - name: sudo
   - name: systemd
   - name: samba-client
+  - name: tcl
   - name: unzip
   - name: util-linux
+  - name: yum
+  - name: yum-utils
 
-
-appstream:
+AppStream:
   url: http://mirror.centos.org/centos/8/AppStream/x86_64/os/
   rpms:
   - name: acpid
+  - name: annobin
+  - name: bind-utils
   - name: centos-backgrounds
   - name: centos-logos-ipa
+  - name: createrepo_c
   - name: genisoimage
+  - name: git
   - name: jq
+  - name: liblockfile
   - name: libreswan
   - name: lua
+  - name: lua-json
+  - name: mariadb
   - name: net-snmp
   - name: net-snmp-agent-libs
   - name: net-snmp-utils
@@ -161,6 +171,10 @@ appstream:
   - name: openscap-scanner
   - name: openscap-utils
   - name: openssh-askpass
+  - name: perl-Mozilla-LDAP
+  - name: perl-NetAddr-IP
+  - name: python3-argcomplete
+  - name: python3-distro
   - name: redhat-lsb
   - name: rpm-build
   - name: rpm-mpi-hooks
@@ -180,8 +194,10 @@ appstream:
   - name: mod_lookup_identity # apache mod
   - name: mod_session         # apache mod
   - name: mod_ssl             # apache mod
+  - name: python3-lib389
   - name: ruby
   - name: 389-ds-base # depends on lots of things from baseos: cracklib-dicts,selinux-policy +
+  - name: 389-ds-base-libs
   - name: nodejs # FIXME for testing; remove later
     version: '~> 10.0'
       # NOTE without version constraints, installs 13 (latest module)
@@ -225,10 +241,12 @@ extras:
   - name: elrepo-release
   - name: epel-next-release
 
-powertools:
+PowerTools:
   url: http://mirror.centos.org/centos/8/PowerTools/x86_64/os/
   rpms:
     - name: elinks
+    - name: lua-filesystem
+    - name: lua-posix
 
 epel:
   url: https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
