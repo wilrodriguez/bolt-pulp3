@@ -64,6 +64,8 @@ BaseOS:
   - name: gzip
   - name: iptables-services
   - name: kexec-tools
+  - name: libsss_autofs
+  - name: libsss_sudo
   - name: logrotate
   - name: logwatch
   - name: lshw
