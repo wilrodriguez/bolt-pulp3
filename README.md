@@ -165,7 +165,7 @@ Mirror, filter, and resolve upstream repos into new "slim" repos for a distro:
 ./slim-pulp-repo-copy.rb --help
 
 # Use Pulp to create slim versions of upstream repos
-./slim-pulp-repo-copy.rb --create-new --repos-rpms-file build/6.6.0/CentOS/8/x86_64/repo_packages.yaml
+./slim-pulp-repo-copy.rb --repos-rpms-file build/6.6.0/CentOS/8/x86_64/repo_packages.yaml
 ```
 
 After the script completes, run the following to check if there were problems
