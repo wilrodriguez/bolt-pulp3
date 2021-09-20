@@ -83,7 +83,8 @@ plan pulp3::in_one_container::volumes::create (
     $tmp_container_out = run_command("${runtime_exe} run -id --name ${container_name}_tmp --volume ${container_name}-settings:/pulp centos:8", $host)
 
     $create_settings_py_out = run_command("(${runtime_exe} exec -i ${container_name}_tmp sh -c 'cat > /pulp/settings.py') << EOM\n${pulp_settings}\nEOM", $host)
+
+    $destroy_tmp_container_out = run_command("${runtime_exe} rm -f ${container_name}_tmp", $host)
   }
 
-  $destroy_tmp_container_out = run_command("${runtime_exe} rm -f ${container_name}_tmp", $host)
 }
