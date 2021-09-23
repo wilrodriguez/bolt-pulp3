@@ -23,7 +23,14 @@
 #                   direct_urls (and no Remote mirror)  to the best available
 #                   versions or obey `version:` constraints.  Make sure any
 #                   direct_url URLs are kept up to date with new releases!
+#
+#  packagegroups: an (optional) list of RPM package groups
+#
+#     Mandatory keys for each rpm:
+#
+#     id: [String] Packagegroup 'id' (view with `dnf grouplist --ids`)
 ---
+# Note: this repo is up top because it can be squirrely
 puppet:
   url: http://yum.puppet.com/puppet6/el/8/x86_64/
   pulp_remote_options:
@@ -44,6 +51,11 @@ puppet:
 
 BaseOS:
   url: http://mirror.centos.org/centos/8/BaseOS/x86_64/os/
+  packagegroups:
+  - id: core
+  - id: base
+  # environment_groups:  # (Not worth implementing; specify packagegroups)
+  #   - name: minimal-environment
   rpms:
   - name: NetworkManager # depends on baseos: NetworkManager-libnm, libndp
   - name: at
