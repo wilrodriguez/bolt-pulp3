@@ -6,8 +6,9 @@
   * [Setup](#setup)
     * [Setup Requirements](#setup-requirements)
       * [OS requirements](#os-requirements)
+      * [OS Storage requirements](#os-storage-requirements)
       * [Runtime dependencies](#runtime-dependencies)
-      * [Things to AVOID](#things-to-avoid)
+      * [Avoiding conflicts with RubyGems/RVM](#avoiding-conflicts-with-rubygemsrvm)
     * [Initial setup](#initial-setup)
     * [Beginning with the repo slimmer](#beginning-with-the-repo-slimmer)
   * [Usage](#usage)
@@ -87,7 +88,7 @@ The following components are needed to use all the features of this project.
     ```
 
 * You may also need to install `gcc` in order for Bolt to compile native ruby
-  gems during `/opt/puppetlabs/bolt/bin/gem install --user -g gem.deps.rb`:
+  gems during `/opt/puppetlabs/bolt/bin/gem install --user-install -g gem.deps.rb`:
 
   * `gcc`
 
@@ -97,6 +98,18 @@ The following components are needed to use all the features of this project.
     sudo yum install -y gcc
     ```
 
+##### OS Storage requirements
+
+* Mirroring repos can take a lot of disk space.  Even with `on_demand`
+  mirroring and slim repo copy, the combined container image, overlays, and
+  volumes for a single OS's mirrors can exceed 5 GB.  Reposyncing the files to
+  the local filesystem will take at least 1.4 GB.
+* Container storage is provisioned with `{docker|podman} volume create`.
+  If your local docker/podman's `graphRoot` resides on a small disk partition,
+  there is a risk that a single run will fill it.  This is of particular
+  concern when running docker under /var/lib/docker when it resides on the
+  system's `/` or `/var` partition.
+
 ##### Runtime dependencies
 
 These dependencies can be installed by Bolt (see the [Initial
@@ -105,12 +118,20 @@ setup](#initial-setup) section)
   * Puppet modules (defined in bolt project's `bolt-project.yaml`)
   * Ruby Gems (defined in `gem.deps.rb`)
 
-##### Things to AVOID
+##### Avoiding conflicts with RubyGems/RVM
 
-* Do NOT use the `bolt` executable/libraries installed by RubyGems
-* Do NOT use an RVM-managed version of Ruby (it overwrites gem paths and
+The project was designed to run from a clean environment, starting with the
+OS-packaged bolt. If you use RubyGems/RVM in your environment, make sure that
+your session:
+
+* ONLY uses the `bolt` executable/libraries that have been installed from an
+  [official OS package][bolt-install]
+* Does NOT use the `bolt` executable/libraries installed by RubyGems
+* Does NOT use an RVM-managed version of Ruby (it overwrites gem paths and
   conflicts with the OS bolt)
 
+If you use RVM, make sure you always run `rvm use system` before running `bolt`
+with this project.
 
 #### Initial setup
 
@@ -286,10 +307,7 @@ this data
 
 
 ```sh
-bolt plan run pulp3::in_one_container::destroy \
-  force=true \
-  files=true \
-  --sudo-password-prompt
+bolt plan run pulp3::in_one_container::destroy volumes=true
 ```
 
 The `--sudo-password-prompt` is necessary because docker/podman will have

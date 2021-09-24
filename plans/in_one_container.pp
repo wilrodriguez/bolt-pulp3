@@ -1,5 +1,10 @@
 # @summary Manage a Pulp-in-one-container
 # @param targets A single target to run on (the container host)
+# @param container_name Name of target Docker/podman container
+# @param container_image Target Docker/podman image
+# @param container_port Pulp3 HTTP port on target Docker/podman container
+# @param runtime Container runtime executable to use (`undef` = autodetect)
+# @param startup_sleep_time Time (secs) to wait before configuring Pulp3 admin
 plan pulp3::in_one_container (
   TargetSpec                     $targets            = 'localhost',
   String[1]                      $user               = system::env('USER'),
