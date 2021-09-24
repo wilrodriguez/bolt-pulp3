@@ -101,8 +101,9 @@ The following components are needed to use all the features of this project.
 ##### OS Storage requirements
 
 * Mirroring repos can take a lot of disk space.  Even with `on_demand`
-  mirroring and slim repo copy, the combined container overlays and volumes for
-  a single OS's mirrors can exceed 5 GB.  Mirroring
+  mirroring and slim repo copy, the combined container image, overlays, and
+  volumes for a single OS's mirrors can exceed 5 GB.  Reposyncing the files to
+  the local filesystem will take at least 1.4 GB.
 * Container storage is provisioned with `{docker|podman} volume create`.
   If your local docker/podman's `graphRoot` resides on a small disk partition,
   there is a risk that a single run will fill it.  This is of particular
