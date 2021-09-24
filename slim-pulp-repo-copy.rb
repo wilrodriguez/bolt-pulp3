@@ -80,18 +80,19 @@ class Pulp3RpmRepoSlimmer
       config.debugging = ENV['DEBUG'].to_s.match?(/yes|true|1/i) # TODO parameter
     end
 
-    @ReposAPI          = PulpRpmClient::RepositoriesRpmApi.new
-    @RemotesAPI        = PulpRpmClient::RemotesRpmApi.new
-    @RepoVersionsAPI   = PulpRpmClient::RepositoriesRpmVersionsApi.new
-    @PublicationsAPI   = PulpRpmClient::PublicationsRpmApi.new
-    @DistributionsAPI  = PulpRpmClient::DistributionsRpmApi.new
-    @ContentPackagesAPI = PulpRpmClient::ContentPackagesApi.new
+    @ReposAPI                = PulpRpmClient::RepositoriesRpmApi.new
+    @RemotesAPI              = PulpRpmClient::RemotesRpmApi.new
+    @RepoVersionsAPI         = PulpRpmClient::RepositoriesRpmVersionsApi.new
+    @PublicationsAPI         = PulpRpmClient::PublicationsRpmApi.new
+    @DistributionsAPI        = PulpRpmClient::DistributionsRpmApi.new
+    @ContentPackagesAPI      = PulpRpmClient::ContentPackagesApi.new
     @ContentPackagegroupsAPI = PulpRpmClient::ContentPackagegroupsApi.new
-    @RpmCopyAPI        = PulpRpmClient::RpmCopyApi.new
+    @ContentModulemdsAPI     = PulpRpmClient::ContentModulemdsApi.new
+    @RpmCopyAPI              = PulpRpmClient::RpmCopyApi.new
 
-    @TasksAPI          = PulpcoreClient::TasksApi.new
-    @ArtifactsAPI      = PulpcoreClient::ArtifactsApi.new
-    @UploadsAPI          = PulpcoreClient::UploadsApi.new
+    @TasksAPI                = PulpcoreClient::TasksApi.new
+    @ArtifactsAPI            = PulpcoreClient::ArtifactsApi.new
+    @UploadsAPI              = PulpcoreClient::UploadsApi.new
   end
 
   def wait_for_task_to_complete(task, opts = {})
@@ -553,9 +554,70 @@ class Pulp3RpmRepoSlimmer
     @RepoVersionsAPI.read(publication.repository_version)
   end
 
-  def get_packagroup_hrefs(repo_version_href, pkggrp_reqs)
+  def get_modulemd_hrefs(repo_version_href, modmd_reqs)
+    unless modmd_reqs && modmd_reqs.size > 0
+      @log.verbose("No modulemds given for repo #{repo_version_href}; skipping get_modulemd_hrefs")
+      return []
+    end
+    reqs = modmd_reqs.map{|x| y = x['stream'].split(':',2); {name: y[0], stream: y[1]}   }.uniq
+    limit = 100
+    results = []
+
+    api_results = []
+    api_result_count = nil
+    offset = 0
+    next_url = nil
+
+    until offset > 0 && next_url.nil? do
+      @log.verbose( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
+
+      paginated_response_list = @ContentModulemdsAPI.list({
+        repository_version: repo_version_href,
+        # In this case, the *__in: params take an actual array and *not( a
+        # comma-delmited string:
+        name__in: reqs.map{|x| x[:name] },
+        stream__in: reqs.map{|x| x[:stream] },
+        fields: 'name,stream,version,context,arch,pulp_href',
+      })
+      selected_results = paginated_response_list.results.select do |x|
+        reqs.any?{|r| x.name == r[:name] && x.stream == r[:stream] }
+      end || []
+      api_results += selected_results
+      offset += selected_results.size
+      next_url = paginated_response_list._next
+      api_result_count = paginated_response_list.count
+      require 'pry'; binding.pry if paginated_response_list.results.size == 0
+    end
+
+    repo = @ReposAPI.read(File.dirname(File.dirname(repo_version_href))+'/')
+    # The API query above only takes one call, but it can return false
+    # positives (e.g., just name or just stream).  In addition, it can return
+    # multiple items for an ns with multiple versions/contexts/arches
+    # TODO: should we handle contexts and arches?
+    req_api_results = reqs.map do |r|
+      ns="#{r[:name]}:#{r[:stream]}"
+      res = api_results.select{|x| x.name == r[:name] && x.stream == r[:stream]}
+      if res.size > 1
+        @log.warn "WARNING: multiple modulemds matched for req '#{r}' in repo #{repo.name}; picking the latest version"
+        res = [res.sort_by{|x| x.version }.last]
+      end
+      [ns, res]
+    end.to_h
+
+    missing = req_api_results.select{|k,v| v.empty?}.map{|k,v| k }
+    unless missing.empty?
+      fail_msg = "\nFATAL: Repo #{repo.name} was missing #{missing.size} requested module streams:\n  - #{missing.join("\n  - ")}\n\n"
+      @log.fatal fail_msg
+      fail fail_msg
+    end
+
+    req_api_results.values.flatten.map{ |x| x.pulp_href }
+  end
+
+
+  def get_packagegroup_hrefs(repo_version_href, pkggrp_reqs)
     unless pkggrp_reqs && pkggrp_reqs.size > 0
-      @log.verbose("No packagegroups given for repo #{repo_version_href}; skipping get_packagroup_hrefs")
+      @log.verbose("No packagegroups given for repo #{repo_version_href}; skipping get_packagegroup_hrefs")
       return []
     end
     reqs = pkggrp_reqs.map{|x| x['id'] }
@@ -713,7 +775,7 @@ class Pulp3RpmRepoSlimmer
       config << {
         'source_repo_version' => data[:source_repo_version_href],
         'dest_repo' => data[:pulp_href],
-        'content' => data[:required_rpm_hrefs] + data[:required_packagegroup_hrefs],
+        'content' => data[:required_rpm_hrefs] + data[:required_packagegroup_hrefs] + data[:required_modulemd_hrefs],
       }
     end
 
@@ -767,7 +829,7 @@ class Pulp3RpmRepoSlimmer
         repo: repo,
         pulp_remote_options: data['pulp_remote_options'] || {},
         pulp_labels: pulp_labels,
-        rpms: data['rpms'] # for possible direct downloads
+        rpms: data['rpms'] || [] # for possible direct downloads
       )
 require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       publication = ensure_rpm_publication(rpm_rpm_repository_version_href, pulp_labels)
@@ -791,7 +853,8 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       @log.info("== Ensuring slim repo mirror of '#{name}'")
       source_repo_version_href = get_repo_version_from_distro(name).pulp_href
       required_rpm_hrefs = get_rpm_hrefs(source_repo_version_href, data['rpms']||[] )
-      required_pkggrp_hrefs = get_packagroup_hrefs(source_repo_version_href, data['packagegroups']||[])
+      required_pkggrp_hrefs = get_packagegroup_hrefs(source_repo_version_href, data['packagegroups']||[])
+      required_modulemd_hrefs = get_modulemd_hrefs(source_repo_version_href, data['modules']||[])
 
       slim_repo_name = name + '.slim'
       repo = ensure_rpm_repo(slim_repo_name, pulp_labels)
@@ -804,6 +867,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       slim_repos[slim_repo_name][:source_repo_version_href] = source_repo_version_href
       slim_repos[slim_repo_name][:required_rpm_hrefs] = required_rpm_hrefs
       slim_repos[slim_repo_name][:required_packagegroup_hrefs] = required_pkggrp_hrefs
+      slim_repos[slim_repo_name][:required_modulemd_hrefs] = required_modulemd_hrefs
       @log.success("Slim repo mirror '#{slim_repo_name}' exists to copy from '#{name}'")
     end
     slim_repos

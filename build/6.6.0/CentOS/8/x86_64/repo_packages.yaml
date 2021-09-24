@@ -8,7 +8,7 @@
 #
 #     Mandatory keys for each rpm:
 #
-#     name: [String] RPM 'name' field (the 'N' in NEVRA)
+#     - name: [String] RPM 'name' field (the 'N' in NEVRA)
 #
 #     Optional keys for rpms:
 #
@@ -26,15 +26,30 @@
 #
 #  packagegroups: an (optional) list of RPM package groups
 #
-#     Mandatory keys for each rpm:
+#     Mandatory keys for each packagegroup:
 #
-#     id: [String] Packagegroup 'id' (view with `dnf grouplist --ids`)
+#     - id: [String] Packagegroup 'id' (view with `dnf grouplist --ids`)
+#
+#
+#  modules: an (optional) list of RPM module streams
+#
+#     Mandatory keys for each item
+#
+#     - stream: [String] module stream in N:S format (ex: `httpd:2.4`)
+#
 ---
+epel-modular:
+  url: https://dl.fedoraproject.org/pub/epel/8/Modular/x86_64/
+  modules:
+  - stream: 389-directory-server:stable
+    # rpms:
+    # - 389-ds-base
+
 # Note: this repo is up top because it can be squirrely
 puppet:
   url: http://yum.puppet.com/puppet6/el/8/x86_64/
-  pulp_remote_options:
-    policy: on_demand
+  pulp_remote_options: # example of pulp_remote_options
+    policy: on_demand  # (`on_demand` is the default behavior)
   # Versions last updated: 2021/07/21
   rpms:
   - name: puppet-agent
@@ -156,6 +171,35 @@ BaseOS:
 
 AppStream:
   url: http://mirror.centos.org/centos/8/AppStream/x86_64/os/
+  modules:
+    # FIXME: I'm adding the RPMs we need from each stream
+    - stream: 389-ds:1.4
+      # rpms:
+      #   - 389-ds-base
+      #   - 389-ds-base-libs
+      #   - 389-ds-base-legacy-tools
+    - stream: httpd:2.4
+      # rpms:
+      #   - httpd
+      #   - mod_session
+      #   - mod_ssl
+    - stream: freeradius:3.0
+      # rpms:
+      #   - freeradius
+    - stream: mariadb:10.3
+      # rpms:
+      #   - mariadb
+    - stream: mysql:8.0
+      # rpms:
+      #   - mysql-server
+    - stream: python36:3.6
+      # rpms:
+      #   - python3-distro
+      #   - python3-lib389
+    - stream: ruby:2.7
+      # rpms:
+      #   - ruby
+    - stream: nodejs:12 # FIXME for testing (should only include one nodejs module); remove later!
   rpms:
   - name: acpid
   - name: annobin
@@ -170,7 +214,6 @@ AppStream:
   - name: libreswan
   - name: lua
   - name: lua-json
-  - name: mariadb
   - name: net-snmp
   - name: net-snmp-agent-libs
   - name: net-snmp-utils
@@ -187,8 +230,7 @@ AppStream:
   - name: openssh-askpass
   - name: perl-Mozilla-LDAP
   - name: perl-NetAddr-IP
-  - name: python3-argcomplete
-  - name: python3-distro
+  - name: python3-argcomplete # not part of a module
   - name: redhat-lsb
   - name: rpm-build
   - name: rpm-mpi-hooks
@@ -200,23 +242,6 @@ AppStream:
   - name: tigervnc-server
   - name: tlog
   - name: vim-enhanced
-  # modular RPMs:
-  - name: mysql-server
-  - name: freeradius
-  - name: httpd
-  - name: mod_auth_gssapi     # apache mod
-  - name: mod_lookup_identity # apache mod
-  - name: mod_session         # apache mod
-  - name: mod_ssl             # apache mod
-  - name: python3-lib389
-  - name: ruby
-  - name: 389-ds-base # depends on lots of things from baseos: cracklib-dicts,selinux-policy +
-  - name: 389-ds-base-libs
-  - name: nodejs # FIXME for testing; remove later
-    version: '~> 10.0'
-      # NOTE without version constraints, installs 13 (latest module)
-  - name: 389-ds-base-legacy-tools
-
 
 extras:
   url: http://mirror.centos.org/centos/8/extras/x86_64/os/
@@ -290,36 +315,6 @@ epel:
   - name: pwgen
   - name: rkhunter
   - name: openssh-ldap-authkeys # AuthorizedKeysCommand script for LDAP
-
-epel-modular:
-  url: https://dl.fedoraproject.org/pub/epel/8/Modular/x86_64/
-  rpms:
-  # depends on:
-  #    baseos:       crypto-policies-scripts, libevent, perl-libs, +
-  #    appstream:    python3-bind, nss, bind-libs, perl-Mozilla-LDAP +
-  #  @ epel-modular: 389-ds-base-libs
-  #
-  # modularity info
-  #  provided by:
-  #    - 389-directory-server:stable (epel-modular)
-  #    - 389-directory-server:stable (epel-modular)
-  #    - 389-directory-server:stable (epel-modular)
-  #    - 389-directory-server:stable (epel-modular)
-  #
-  #  depends on modules (:stable):
-  #    perl:5.26, perl-IO-Socket-SSL:2.066, perl-libwww-perl:6.34
-  - name: 389-ds-base
-
-  ### # depends on:
-  ### #    baseos:       crypto-policies-scripts, libevent, perl-libs, +
-  ### #    appstream:    python3-bind, nss, bind-libs, perl-Mozilla-LDAP +
-  ### #  @ epel-modular: 389-ds-base-libs
-  ### #
-  ### # modularity info
-  ### #    - only exists in 389-directory-server:stable (epel-modular)
-  ### #
-  ### - name: 389-ds-base-legacy-tools
-
 
 
 postgresql:
