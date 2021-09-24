@@ -86,6 +86,7 @@ class Pulp3RpmRepoSlimmer
     @PublicationsAPI   = PulpRpmClient::PublicationsRpmApi.new
     @DistributionsAPI  = PulpRpmClient::DistributionsRpmApi.new
     @ContentPackagesAPI = PulpRpmClient::ContentPackagesApi.new
+    @ContentPackagegroupsAPI = PulpRpmClient::ContentPackagegroupsApi.new
     @RpmCopyAPI        = PulpRpmClient::RpmCopyApi.new
 
     @TasksAPI          = PulpcoreClient::TasksApi.new
@@ -552,6 +553,47 @@ class Pulp3RpmRepoSlimmer
     @RepoVersionsAPI.read(publication.repository_version)
   end
 
+  def get_packagroup_hrefs(repo_version_href, pkggrp_reqs)
+    unless pkggrp_reqs && pkggrp_reqs.size > 0
+      @log.verbose("No packagegroups given for repo #{repo_version_href}; skipping get_packagroup_hrefs")
+      return []
+    end
+    reqs = pkggrp_reqs.map{|x| x['id'] }
+    limit = 100
+    results = []
+    repo = @ReposAPI.read(File.dirname(File.dirname(repo_version_href))+'/')
+
+    api_results = []
+    api_result_count = nil
+    offset = 0
+    next_url = nil
+
+    until offset > 0 && next_url.nil? do
+      @log.verbose( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
+
+      paginated_response_list = @ContentPackagegroupsAPI.list({
+        repository_version: repo_version_href,
+        fields: 'id,name,packages,description,digest,pulp_href',
+      })
+
+      selected_results = paginated_response_list.results.select{|x| reqs.include?(x.id) } || []
+      api_results += selected_results
+      offset += selected_results.size
+      next_url = paginated_response_list._next
+      api_result_count = paginated_response_list.count
+      require 'pry'; binding.pry if paginated_response_list.results.size == 0
+    end
+
+    # Check that we found all reqs
+    missing = reqs - api_results.map{|x| x.id }
+    unless missing.empty?
+      @log.fatal "\nFATAL: Repo #{repo.name} was missing #{missing.size} requested Package groups:\n  - #{missing.join("\n  - ")}\n\n"
+    fail "\nFATAL: Repo #{repo.name} was missing #{missing.size} requested Package groups:\n  - #{missing.join("\n  - ")}\n\n"
+    end
+
+    api_results.map { |x| x.pulp_href }
+  end
+
   # We need a pulp href for each RPM, but Pulp's API returns *every* version
   # for a name.
   #
@@ -564,6 +606,10 @@ class Pulp3RpmRepoSlimmer
   #     - Not sure about <name>.x86_64 & <name>.noarch (does this happen?)
   #
   def get_rpm_hrefs(repo_version_href, rpm_reqs)
+    unless rpm_reqs && rpm_reqs.size > 0
+      @log.verbose("No rpms given for repo #{repo_version_href}; skipping get_rpm_hrefs")
+      return []
+    end
     limit = 100
     rpm_batch_size = limit
     api_results = []
@@ -667,7 +713,7 @@ class Pulp3RpmRepoSlimmer
       config << {
         'source_repo_version' => data[:source_repo_version_href],
         'dest_repo' => data[:pulp_href],
-        'content' => data[:required_rpm_hrefs],
+        'content' => data[:required_rpm_hrefs] + data[:required_packagegroup_hrefs],
       }
     end
 
@@ -744,7 +790,8 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
     repos_to_mirror.each do |name, data|
       @log.info("== Ensuring slim repo mirror of '#{name}'")
       source_repo_version_href = get_repo_version_from_distro(name).pulp_href
-      required_rpm_hrefs = get_rpm_hrefs(source_repo_version_href, data['rpms'])
+      required_rpm_hrefs = get_rpm_hrefs(source_repo_version_href, data['rpms']||[] )
+      required_pkggrp_hrefs = get_packagroup_hrefs(source_repo_version_href, data['packagegroups']||[])
 
       slim_repo_name = name + '.slim'
       repo = ensure_rpm_repo(slim_repo_name, pulp_labels)
@@ -756,6 +803,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       slim_repos[slim_repo_name][:name] = "slim-#{data['name']}"
       slim_repos[slim_repo_name][:source_repo_version_href] = source_repo_version_href
       slim_repos[slim_repo_name][:required_rpm_hrefs] = required_rpm_hrefs
+      slim_repos[slim_repo_name][:required_packagegroup_hrefs] = required_pkggrp_hrefs
       @log.success("Slim repo mirror '#{slim_repo_name}' exists to copy from '#{name}'")
     end
     slim_repos
