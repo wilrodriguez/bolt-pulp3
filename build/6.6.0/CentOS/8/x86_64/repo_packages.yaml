@@ -83,14 +83,24 @@ BaseOS:
   - name: chrony
   - name: cronie
   - name: crontabs
+  - name: dhcp-client
   - name: dnf
   - name: dnf-automatic
   - name: dnf-plugins-core
+  - name: fipscheck
+  - name: fipscheck-lib
+  - name: grub2-common
+  - name: grub2-pc
   - name: grub2-tools-minimal
   - name: gssproxy
   - name: gzip
+  - name: hdparm
   - name: iptables-services
   - name: kexec-tools
+  - name: lksctp-tools
+  - name: libcurl
+  - name: libhugetlbfs
+  - name: libnghttp2
   - name: libsss_autofs
   - name: libsss_sudo
   - name: logrotate
@@ -105,6 +115,7 @@ BaseOS:
   - name: mdadm
   - name: mlocate
   - name: net-snmp-libs
+  - name: netlabel_tools
   - name: nfs4-acl-tools
   - name: nfs-utils
   - name: openssh
@@ -128,6 +139,7 @@ BaseOS:
   - name: quota-rpc
   - name: readline
   - name: readline-devel
+  - name: rpm
   - name: rpm-apidocs
   - name: rpm-build-libs
   - name: rpm-cron
@@ -145,25 +157,31 @@ BaseOS:
   - name: selinux-policy-devel
   - name: selinux-policy-targeted
   - name: setools-console
+  - name: setserial
   - name: sssd
   - name: sssd-ad
   - name: sssd-client
   - name: sssd-common
   - name: sssd-common-pac
+  - name: sssd-dbus
   - name: sssd-ipa
   - name: sssd-kcm
   - name: sssd-krb5
   - name: sssd-krb5-common
   - name: sssd-ldap
+  - name: sssd-libwbclient
   - name: sssd-nfs-idmap
   - name: sssd-polkit-rules
   - name: sssd-proxy
   - name: sssd-tools
   - name: sssd-winbind-idmap
+  - name: stunnel
   - name: sudo
   - name: systemd
+  - name: syslinux-tftpboot
   - name: samba-client
   - name: tcl
+  - name: tmpwatch
   - name: unzip
   - name: util-linux
   - name: yum
@@ -192,6 +210,12 @@ AppStream:
     - stream: mysql:8.0
       # rpms:
       #   - mysql-server
+    - stream: perl:5.26
+    - stream: perl-IO-Socket-SSL:2.066
+    - stream: perl-libwww-perl:6.34
+      # rpms:
+      #   - python3-distro
+      #   - python3-lib389
     - stream: python36:3.6
       # rpms:
       #   - python3-distro
@@ -202,6 +226,7 @@ AppStream:
     - stream: nodejs:12 # FIXME for testing (should only include one nodejs module); remove later!
   rpms:
   - name: acpid
+  - name: aide
   - name: annobin
   - name: bind-utils
   - name: centos-backgrounds
@@ -238,6 +263,8 @@ AppStream:
   - name: rpm-ostree-libs
   - name: rpm-plugin-fapolicyd
   - name: scap-security-guide
+  - name: sysstat
+  - name: sysfsutils
   - name: tigervnc
   - name: tigervnc-server
   - name: tlog
@@ -315,7 +342,6 @@ epel:
   - name: pwgen
   - name: rkhunter
   - name: openssh-ldap-authkeys # AuthorizedKeysCommand script for LDAP
-
 
 postgresql:
   url: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-8-x86_64/
@@ -485,4 +511,4 @@ postgresql:
 ###   - name: simp-rsync
 ###   - name: simp-rsync-skeleton
 ###   - name: simp-selinux-policy
-###   - name: simp-utils
+###  - name: simp-utils
