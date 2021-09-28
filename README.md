@@ -15,7 +15,6 @@
     * [(Bolt) Provisioning the Pulp container](#bolt-provisioning-the-pulp-container)
     * [(Script) `slim-pulp-repo-copy.rb` - Use Pulp to create slim repo mirrors](#script-slim-pulp-repo-copyrb---use-pulp-to-create-slim-repo-mirrors)
     * [(Script) `_*.reposync.sh`: Mirror all slim repos into a local directory](#script-_reposyncsh-mirror-all-slim-repos-into-a-local-directory)
-    * [(Script) `fix-local-slim-modular-repos.rb`: Fix modulemd data in local slim repos](#script-fix-local-slim-modular-reposrb-fix-modulemd-data-in-local-slim-repos)
     * [(You) Taking the repos and building SIMP](#you-taking-the-repos-and-building-simp)
     * [(Bolt) Destroying the Pulp container](#bolt-destroying-the-pulp-container)
       * [Destroying container, but preserving mount data (persist Pulp data)](#destroying-container-but-preserving-mount-data-persist-pulp-data)
@@ -32,11 +31,9 @@ This includes:
 
 * Bolt plans to provision, configure, and destroy a local
   [Pulp-in-one-container]
-* Two Ruby scripts:
+* A Ruby script:
   1. `slim-pulp-repo-copy.rb` ― uses Pulp to create, copy, and depsolve all
      desired RPMs from upstream repos into "slim" repo mirrors
-  2. `fix-local-slim-modular-repos.rb` ― fixes modular repo data in a local
-     'slimmed' repo directory
 
 <!--
 This repo presently contains a mishmash of several projects that aid the same workflow:
@@ -75,16 +72,14 @@ The following components are needed to use all the features of this project.
   * [installing docker on centos]
   * [installing docker on fedora]
 
-* Some OS commands must be available to download and fix
-  `modules.yaml` in later scripts:
+* OS commands that must be available to locally mirror repos in later scripts:
 
-  * `modifyrepo_c`
   * `dnf reposync`
 
   On EL7, you can install these commands with:
 
     ```
-    sudo yum install -y createrepo_c dnf-plugins-core
+    sudo yum install -y dnf-plugins-core
     ```
 
 * You may also need to install `gcc` in order for Bolt to compile native ruby
@@ -258,20 +253,6 @@ _download_path/
     ├── postgresql/
     └── puppet/
 ```
-
-#### (Script) `fix-local-slim-modular-repos.rb`: Fix modulemd data in local slim repos
-
-This fixes modular repos' slimmed RPM metadata in the repos downloaded under
-`_download_path/<namespace>/` that was created by the `.reposync.sh` script(s):
-
-```sh
-./fix-local-slim-modular-repos.rb [ROOT_DIR_OF_REPOS]
-```
-
-`[ROOT_DIR_OF_REPOS]` defaults to `_download_path/build-6-6-0-centos-8-x86-64-repo-packages/`
-
-You don't need to run `fix-local-slim-modular-repos.rb` for EL7, because it
-doesn't have any modular repos.
 
 
 #### (You) Taking the repos and building SIMP
