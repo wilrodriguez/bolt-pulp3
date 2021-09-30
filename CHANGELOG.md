@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Filter for podman matching
 - Container destruction
+- Bumped the pulp image to 3.15 to fix EPEL issues
 
 ## [0.3.0] - 2021-08-26
 
