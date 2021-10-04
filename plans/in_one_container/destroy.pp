@@ -1,8 +1,4 @@
-# @summary Destroy a Pulp-in-one-container
-#
-#   Depending on your sudo configuration, you may need to run `bolt plan run`
-#   with `--sudo-password-prompt`
-#
+# @summary Destroy a Pulp-in-one-container and (optionally) its volumes
 # @param targets A single target to run on (the container host)
 # @param container_name Name of target Docker/podman container
 # @param container_image Target Docker/podman image
@@ -14,14 +10,14 @@
 plan pulp3::in_one_container::destroy (
   TargetSpec                    $targets         = 'localhost',
   String[1]                     $user            = system::env('USER'),
-  Stdlib::AbsolutePath          $container_root  = system::env('PWD'),
   String[1]                     $container_name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
   String[1]                     $container_image = lookup('pulp3::in_one_container::container_image')|$k|{'pulp/pulp'},
   Optional[Enum[podman,docker]] $runtime         = undef,
   Boolean                       $force           = false,
   Boolean                       $volumes         = false,
 ) {
-  $host = pulp3::in_one_container::get_host($targets)
+  $host = run_plan('pulp3::in_one_container::get_host',$targets)
+  $runtime_exe = $host.facts['pioc_runtime_exe']
 
   if run_plan( 'pulp3::in_one_container::match_container', {
     'host'        => $host,

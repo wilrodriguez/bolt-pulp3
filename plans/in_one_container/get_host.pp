@@ -38,7 +38,7 @@ plan pulp3::in_one_container::get_host (
   }
 
   $host.add_facts({
-    'pioc_runtime_exe' => $runtime_exe,
+    'pioc_runtime_exe' => $_runtime,
   })
 
   return $host
