@@ -19,6 +19,7 @@ plan pulp3::in_one_container::volumes::create (
     'storage'
   ],
   Boolean $noop = false,
+  Stdlib::AbsolutePath $django_log = lookup('pulp3::in_one_container::django_log')|$k|{'/var/run/django-info.log'},
 ) {
   apply(
     $host,
@@ -67,7 +68,7 @@ plan pulp3::in_one_container::volumes::create (
                 'level': 'INFO',
                 'class': 'logging.FileHandler',
                 'formatter': 'file',
-                'filename': '/run/django-info.log'
+                'filename': '${django_log}'
             }
         },
         'loggers': {
