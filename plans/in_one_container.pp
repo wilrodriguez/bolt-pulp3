@@ -1,4 +1,4 @@
-# @summary Manage a Pulp-in-one-container
+# @summary Ensure a Pulp-in-one-container container is configured and running
 # @param targets A single target to run on (the container host)
 # @param container_name Name of target Docker/podman container
 # @param container_image Target Docker/podman image
@@ -22,8 +22,7 @@ plan pulp3::in_one_container (
   },
 ) {
   $host = run_plan('pulp3::in_one_container::get_host', 'targets' => $targets, 'runtime' => $runtime)
-  $runtime_exe            = $host.facts['pioc_runtime_exe']
-  $apply_el7_docker_fixes = $host.facts['pioc_apply_el7_docker_fixes']
+  $runtime_exe = $host.facts['pioc_runtime_exe']
 
   if run_plan( 'pulp3::in_one_container::match_container', {
     'host'  => $host,

@@ -12,7 +12,7 @@
 # @param volumes
 #   When `true`, deletes local vol mounts (may require `--sudo-password-prompt`)
 plan pulp3::in_one_container::destroy (
-  TargetSpec                    $targets         = "localhost",
+  TargetSpec                    $targets         = 'localhost',
   String[1]                     $user            = system::env('USER'),
   Stdlib::AbsolutePath          $container_root  = system::env('PWD'),
   String[1]                     $container_name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
@@ -21,22 +21,7 @@ plan pulp3::in_one_container::destroy (
   Boolean                       $force           = false,
   Boolean                       $volumes         = false,
 ) {
-  $host = get_target($targets)
-  run_plan('facts', 'targets' => $host)
-
-  $apply_el7_docker_fixes = (
-    $host.facts['os']['family'] == 'Redhat' and
-    $host.facts['os']['release']['major'] == '7'
-  )
-
-  $runtime_exe = run_plan(
-    'pulp3::in_one_container::validate_container_exe',
-    {
-      'host'                   => $host,
-      'apply_el7_docker_fixes' => $apply_el7_docker_fixes,
-      'runtime'                => $runtime,
-    }
-  )
+  $host = pulp3::in_one_container::get_host($targets)
 
   if run_plan( 'pulp3::in_one_container::match_container', {
     'host'        => $host,
