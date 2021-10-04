@@ -1,6 +1,9 @@
-# @summary Create local directories for Pulp-in-one-container
-# @param host A single host to configure
+# @summary Determine if specified container already exists
 # @api private
+# @return Boolean true if container is found, false if not found
+#
+# @param host  The container host (usually localhost)
+# @param all  When true, matches all (including stopped) containers
 #
 # Details at https://pulpproject.org/pulp-in-one-container/
 plan pulp3::in_one_container::match_container(
@@ -44,7 +47,7 @@ plan pulp3::in_one_container::match_container(
   if $ls_nodes[$name] {
     if $ls_nodes[$name]['image'] == $image {
       if $port and !( $port in $ls_nodes[$name]['ports'] ) {
-        fail_plan("Container '$name' is in use but the port differs\n  ${ls_nodes[$name]['raw']}")
+        fail_plan("Container '${name}' is in use but the port differs\n  ${ls_nodes[$name]['raw']}")
       }
 
       return true

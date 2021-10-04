@@ -30,7 +30,7 @@ plan pulp3::in_one_container::volumes::destroy (
 
       exec { "Destroy ${_vname}":
         command => "${runtime_exe} volume rm ${_vname}",
-        onlyif => "${runtime_exe} volume inspect ${_vname}",
+        onlyif  => "${runtime_exe} volume inspect ${_vname}",
         path    => [
           '/bin',
           '/usr/bin'
