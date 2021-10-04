@@ -4,3 +4,6 @@ modules:
 - name: puppetlabs-stdlib
 - name: nwops-debug
 - name: puppet-format
+
+plans:
+  - 'pulp3::*'
