@@ -64,6 +64,20 @@ puppet:
   - name: puppetserver
     version: '~> 6.15.3'
 
+# Note: this repo is up top because it can be squirrely
+puppet7:
+  url: http://yum.puppet.com/puppet7/el/8/x86_64/
+  pulp_remote_options: # example of pulp_remote_options
+    policy: on_demand  # (`on_demand` is the default behavior)
+  # Versions last updated: 2021/07/21
+  rpms:
+  - name: puppet-agent
+  - name: puppet-bolt
+  - name: puppet7-release
+  - name: puppetdb
+  - name: puppetdb-termini
+  - name: puppetserver
+
 BaseOS:
   url: http://mirror.centos.org/centos/8/BaseOS/x86_64/os/
   packagegroups:
@@ -87,9 +101,11 @@ BaseOS:
   - name: dnf
   - name: dnf-automatic
   - name: dnf-plugins-core
+  - name: efibootmgr
   - name: fipscheck
   - name: fipscheck-lib
   - name: grub2-common
+  - name: grub2-efi-x64
   - name: grub2-pc
   - name: grub2-tools-minimal
   - name: gssproxy
