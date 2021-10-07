@@ -226,7 +226,7 @@ AppStream:
     - stream: mysql:8.0
       # rpms:
       #   - mysql-server
-    - stream: perl:5.26
+    - stream: perl:5.30
     - stream: perl-IO-Socket-SSL:2.066
     - stream: perl-libwww-perl:6.34
       # rpms:
@@ -278,6 +278,14 @@ AppStream:
   - name: rpm-ostree
   - name: rpm-ostree-libs
   - name: rpm-plugin-fapolicyd
+  - name: rsyslog
+  - name: rsyslog-crypto
+  - name: rsyslog-doc
+  - name: rsyslog-gnutls
+  - name: rsyslog-gssapi
+  - name: rsyslog-mysql
+  - name: rsyslog-pgsql
+  - name: rsyslog-snmp
   - name: scap-security-guide
   - name: sysstat
   - name: sysfsutils
