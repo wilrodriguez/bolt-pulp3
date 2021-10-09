@@ -17,8 +17,8 @@
     * [(Script) `_*.reposync.sh`: Mirror all slim repos into a local directory](#script-_reposyncsh-mirror-all-slim-repos-into-a-local-directory)
     * [(You) Taking the repos and building SIMP](#you-taking-the-repos-and-building-simp)
     * [(Bolt) Destroying the Pulp container](#bolt-destroying-the-pulp-container)
-      * [Destroying container, but preserving mount data (persist Pulp data)](#destroying-container-but-preserving-mount-data-persist-pulp-data)
-      * [Destroying both container and mounts w/state files (reset Pulp data)](#destroying-both-container-and-mounts-wstate-files-reset-pulp-data)
+      * [Destroying container, but preserving volumes (persists Pulp data)](#destroying-container-but-preserving-volumes-persists-pulp-data)
+      * [Destroying both container + volumes w/data (wipes Pulp clean)](#destroying-both-container--volumes-wdata-wipes-pulp-clean)
 
 <!-- vim-markdown-toc -->
 
@@ -188,7 +188,9 @@ After the script completes, run the following to check if there were problems
 while resolving RPM dependencies during the Advanced RPM Copy:
 
 ```sh
-grep -v -E '_call_with_frames_removed|Attempting to start' run/django-info.log | grep -E 'WARNING'
+
+pulp3::in_one_container::get_log
+grep -v -E '_call_with_frames_removed|Attempting to start' downloads/logs/pulp/django-info.log | grep -E 'WARNING'
 ```
 
 
@@ -199,8 +201,8 @@ grep -v -E '_call_with_frames_removed|Attempting to start' run/django-info.log |
 
 **Output files**
 
-The script will create helper files (the names will change based on the input
-file used):
+The script will create helper files under the `output/` directory (the names
+will change based on the input file used):
 
 | Output File                        | Purpose                                                                                                   |
 | ---                                | ---                                                                                                       |
@@ -219,7 +221,7 @@ all of its repos and metadata into a local directory.
 **Usage**
 
 ```sh
-bash _slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.reposync.sh
+bash output/_slim_repos.build-6-6-0-centos-8-x86-64-repo-packages.reposync.sh
 ```
 
 **Output**
@@ -245,12 +247,13 @@ _download_path/
 │   ├── puppet/
 │   └── simp/
 └── build-6-6-0-centos-8-x86-64-repo-packages/
-    ├── appstream/
-    ├── baseos/
+    ├── AppStream/
+    ├── BaseOS/
     ├── epel/
     ├── epel-modular/
     ├── extras/
     ├── postgresql/
+    ├── PowerTools/
     └── puppet/
 ```
 
@@ -267,9 +270,9 @@ metadata will remain intact.
 #### (Bolt) Destroying the Pulp container
 
 The `pulp3::in_one_container::destroy` plan will destroy the
-Pulp-in-one-container and―optionally―all of its mounts and state data:
+Pulp-in-one-container and―optionally―its volumes and data:
 
-##### Destroying container, but preserving mount data (persist Pulp data)
+##### Destroying container, but preserving volumes (persists Pulp data)
 
 Note: This keeps all of Pulp's state (database files, pids, mirrored repo data)
 intact.  If you provision another container, it will re-mount and re-use this
@@ -280,7 +283,7 @@ bolt plan run pulp3::in_one_container::destroy
 ```
 
 
-##### Destroying both container and mounts w/state files (reset Pulp data)
+##### Destroying both container + volumes w/data (wipes Pulp clean)
 
 Note: This DESTROYS all of Pulp's state (database files, pids, mirrored repo
 data) intact.  If you provision another container, it will re-mount and re-use
@@ -288,14 +291,9 @@ this data
 
 
 ```sh
-bolt plan run pulp3::in_one_container::destroy volumes=true
+bolt plan run pulp3::in_one_container::destroy volumes=true [force=true]
 ```
 
-The `--sudo-password-prompt` is necessary because docker/podman will have
-created some files as `root` or other UIDs and it is more convenient to
-remove them all as superuser than to map each mount's path inside the container
-and wipe them from there (also, this will still work after the container is
-destroyed).
 
 
 
