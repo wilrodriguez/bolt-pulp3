@@ -239,7 +239,6 @@ AppStream:
     - stream: ruby:2.7
       # rpms:
       #   - ruby
-    - stream: nodejs:12 # FIXME for testing (should only include one nodejs module); remove later!
   rpms:
   - name: acpid
   - name: aide
@@ -340,7 +339,7 @@ PowerTools:
 
 epel:
   url: https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
-  url: https://sjc.edge.kernel.org/fedora-buffet/epel/8/Everything/x86_64/
+  ###url: https://sjc.edge.kernel.org/fedora-buffet/epel/8/Everything/x86_64/
   rpms:
   - name: htop        # no deps
   - name: vim-ansible # depends on appstream: vim-filesystem
