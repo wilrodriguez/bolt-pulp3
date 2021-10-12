@@ -5,18 +5,13 @@
 # - http://docs.ruby-lang.org/en/2.5.0/Gem.html#method-c-use_gemdeps
 source 'https://rubygems.org'
 
-# gem 'octokit', '~> 4.18'
-# gem 'jira-ruby', '~> 2.0'
-gem 'puppet-debugger', '~> 0.2'
-# gem 'bundler', '~> 2.0'
-gem 'pry', '~> 0.13'
-gem 'pry-remote'
-gem 'terminal-table', '~> 1.8'
-# gem 'facter', '~> 4.0'
-#
 gem 'pulpcore_client'
 gem 'pulp_rpm_client'
 gem 'bindata'
 gem 'down'
 gem 'logging'
-gem 'nokogiri'
+
+gem 'puppet-debugger', '~> 0.2'
+gem 'pry', '~> 0.13'
+gem 'pry-remote'
+

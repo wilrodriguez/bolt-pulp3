@@ -1,31 +1,44 @@
-# @summary Manage a Pulp-in-one-container
-# @param targets A single target to run on (the container host)
+# @summary Ensures a TargetSpec is a run-ready PIOC host Target with new fact
+#   `pioc_runtime_exe` ('docker' or 'podman')
+# @return Target  a single host Target, with facts
 # @api private
+#
+# @param targets  A single target to run on (the container host)
 plan pulp3::in_one_container::get_host (
-  TargetSpec           $targets         = "localhost",
-  String[1]            $container_name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
+  TargetSpec           $targets         = 'localhost',
   Optional[Enum[podman,docker]] $runtime = undef,
 ) {
   $host = get_target($targets)
   run_plan('facts', 'targets' => $host)
 
-  $apply_el7_docker_fixes = (
+  $available_runtime_exes = ['podman','docker'].map |$exe| {
+    if run_command(
+      "command -v \"${exe}\"", $host, { '_catch_errors' => true }
+    )[0].value['exit_code'] == 0 { $exe }
+  }.filter |$x| { $x }
+
+  # CentOS 7 (and EL7) must use docker instead of podman
+  #
+  #   https://pulpproject.org/pulp-in-one-container/#docker-on-centos-7
+  if (
     $host.facts['os']['family'] == 'Redhat' and
     $host.facts['os']['release']['major'] == '7'
-  )
-
-  $runtime_exe = run_plan(
-    'pulp3::in_one_container::validate_container_exe',
-    {
-      'host'                   => $host,
-      'apply_el7_docker_fixes' => $apply_el7_docker_fixes,
-      'runtime'                => $runtime,
+  ) {
+    warning( "EL7 detected on ${host.name}; forcing container runtime to 'docker'")
+    warning( '  See: https://pulpproject.org/pulp-in-one-container/#docker-on-centos-7' )
+    $_runtime = 'docker'
+  } else {
+    $_runtime = $runtime ? {
+      String  => $runtime,
+      default => 'podman',
     }
-  )
+  }
+  unless $_runtime in $available_runtime_exes {
+    fail_plan( "FATAL: The container runtime executable '${_runtime}' is not available on '${host}'.  Make sure the correct container runtime is installed and configured." )
+  }
 
   $host.add_facts({
-    'pioc_apply_el7_docker_fixes' => $apply_el7_docker_fixes,
-    'pioc_runtime_exe'            => $runtime_exe,
+    'pioc_runtime_exe' => $_runtime,
   })
 
   return $host

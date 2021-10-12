@@ -102,10 +102,20 @@ BaseOS:
   - name: dnf-automatic
   - name: dnf-plugins-core
   - name: efibootmgr
+  - name: efi-filesystem
+  - name: efivar
+  - name: efivar-libs
   - name: fipscheck
   - name: fipscheck-lib
+  - name: fwupdate
+  - name: fwupdate-efi
+  - name: fwupdate-libs
   - name: grub2-common
+  - name: grub2-efi-aa64-modules
+  - name: grub2-efi-ia32
+  - name: grub2-efi-ia32-modules
   - name: grub2-efi-x64
+  - name: grub2-efi-x64-modules
   - name: grub2-pc
   - name: grub2-tools-minimal
   - name: gssproxy
@@ -130,6 +140,7 @@ BaseOS:
   - name: mcstrans
   - name: mdadm
   - name: mlocate
+  - name: mokutil
   - name: net-snmp-libs
   - name: netlabel_tools
   - name: nfs4-acl-tools
@@ -174,6 +185,8 @@ BaseOS:
   - name: selinux-policy-targeted
   - name: setools-console
   - name: setserial
+  - name: shim-ia32
+  - name: shim-x64
   - name: sssd
   - name: sssd-ad
   - name: sssd-client
@@ -239,7 +252,6 @@ AppStream:
     - stream: ruby:2.7
       # rpms:
       #   - ruby
-    - stream: nodejs:12 # FIXME for testing (should only include one nodejs module); remove later!
   rpms:
   - name: acpid
   - name: aide
@@ -269,6 +281,7 @@ AppStream:
   - name: openscap-scanner
   - name: openscap-utils
   - name: openssh-askpass
+  - name: pesign
   - name: perl-Mozilla-LDAP
   - name: perl-NetAddr-IP
   - name: python3-argcomplete # not part of a module
@@ -340,7 +353,7 @@ PowerTools:
 
 epel:
   url: https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
-  url: https://sjc.edge.kernel.org/fedora-buffet/epel/8/Everything/x86_64/
+  ###url: https://sjc.edge.kernel.org/fedora-buffet/epel/8/Everything/x86_64/
   rpms:
   - name: htop        # no deps
   - name: vim-ansible # depends on appstream: vim-filesystem

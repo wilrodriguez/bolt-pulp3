@@ -1,8 +1,4 @@
-# @summary Destroy a Pulp-in-one-container
-#
-#   Depending on your sudo configuration, you may need to run `bolt plan run`
-#   with `--sudo-password-prompt`
-#
+# @summary Destroy a Pulp-in-one-container and (optionally) its volumes
 # @param targets A single target to run on (the container host)
 # @param container_name Name of target Docker/podman container
 # @param container_image Target Docker/podman image
@@ -10,33 +6,18 @@
 # @param force
 #   When `true`, skips confirmation prompt before destroying things
 # @param volumes
-#   When `true`, deletes local vol mounts (may require `--sudo-password-prompt`)
+#   When `true`, deletes local container volumes
 plan pulp3::in_one_container::destroy (
-  TargetSpec                    $targets         = "localhost",
+  TargetSpec                    $targets         = 'localhost',
   String[1]                     $user            = system::env('USER'),
-  Stdlib::AbsolutePath          $container_root  = system::env('PWD'),
   String[1]                     $container_name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
   String[1]                     $container_image = lookup('pulp3::in_one_container::container_image')|$k|{'pulp/pulp'},
   Optional[Enum[podman,docker]] $runtime         = undef,
-  Boolean                       $force           = false,
-  Boolean                       $volumes         = false,
+  Boolean                       $force           = lookup('pulp3::in_one_container::destroy::force')|$k|{ false },
+  Boolean                       $volumes         = lookup('pulp3::in_one_container::destroy::volumes')|$k|{ false },
 ) {
-  $host = get_target($targets)
-  run_plan('facts', 'targets' => $host)
-
-  $apply_el7_docker_fixes = (
-    $host.facts['os']['family'] == 'Redhat' and
-    $host.facts['os']['release']['major'] == '7'
-  )
-
-  $runtime_exe = run_plan(
-    'pulp3::in_one_container::validate_container_exe',
-    {
-      'host'                   => $host,
-      'apply_el7_docker_fixes' => $apply_el7_docker_fixes,
-      'runtime'                => $runtime,
-    }
-  )
+  $host = run_plan('pulp3::in_one_container::get_host',$targets)
+  $runtime_exe = $host.facts['pioc_runtime_exe']
 
   if run_plan( 'pulp3::in_one_container::match_container', {
     'host'        => $host,

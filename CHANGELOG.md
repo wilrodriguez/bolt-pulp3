@@ -8,14 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- `CHANGELOG.md`
-- `Rakefile` & tasks for
-- Updated RPMs
+- Container volume support
+- New plan `pulp3::in_one_container::get_logs`, to fetch and review django logs
+  from inside the running Pulp container
+- Created `CHANGELOG.md` for project
+- Updated RPMs in `build/**/*.yaml` files
 
 ### Changed
 
-- Reworked volumes
-- Cleaned up root directory
+- Cleaned up root directory, gem deps, Bolt project
+- Internal code simplifications
+
+### Removed
+- (Incomplete) never-used plans `::rpm::mirror` and `::rpm::repo`
 
 ### Fixed
 
