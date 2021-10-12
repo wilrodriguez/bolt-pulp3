@@ -211,6 +211,7 @@ BaseOS:
   - name: samba-client
   - name: tcl
   - name: tmpwatch
+  - name: tmux
   - name: unzip
   - name: util-linux
   - name: yum
