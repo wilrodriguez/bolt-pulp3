@@ -135,6 +135,7 @@ BaseOS:
   - name: lsof
   - name: lsscsi
   - name: lvm2
+  - name: mailcap
   - name: man-db
   - name: man-pages
   - name: mcstrans
@@ -268,6 +269,7 @@ AppStream:
   - name: libreswan
   - name: lua
   - name: lua-json
+  - name: mutt
   - name: net-snmp
   - name: net-snmp-agent-libs
   - name: net-snmp-utils
@@ -306,6 +308,8 @@ AppStream:
   - name: tigervnc
   - name: tigervnc-server
   - name: tlog
+  - name: tokyocabinet
+  - name: urlview
   - name: vim-enhanced
 
 extras:
