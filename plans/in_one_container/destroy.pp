@@ -14,7 +14,7 @@ plan pulp3::in_one_container::destroy (
   String[1]                     $container_image = lookup('pulp3::in_one_container::container_image')|$k|{'pulp/pulp'},
   Optional[Enum[podman,docker]] $runtime         = undef,
   Boolean                       $force           = lookup('pulp3::in_one_container::destroy::force')|$k|{ false },
-  Boolean                       $volumes         = lookup('pulp3::in_one_container::destroy::volumes')|$k|{ false },
+  Boolean                       $volumes         = lookup('pulp3::in_one_container::destroy::volumes')|$k|{ true },
 ) {
   $host = run_plan('pulp3::in_one_container::get_host',$targets)
   $runtime_exe = $host.facts['pioc_runtime_exe']

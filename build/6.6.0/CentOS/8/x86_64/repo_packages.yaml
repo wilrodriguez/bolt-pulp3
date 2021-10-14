@@ -241,7 +241,7 @@ AppStream:
     - stream: mysql:8.0
       # rpms:
       #   - mysql-server
-    - stream: perl:5.30
+    - stream: perl:5.26
     - stream: perl-IO-Socket-SSL:2.066
     - stream: perl-libwww-perl:6.34
       # rpms:
