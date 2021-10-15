@@ -90,6 +90,7 @@ BaseOS:
   - name: at
   - name: autofs
   - name: audispd-plugins
+  - name: c-ares
   - name: centos-indexhtml
   - name: centos-logos
   - name: centos-logos-httpd
@@ -98,6 +99,9 @@ BaseOS:
   - name: cronie
   - name: crontabs
   - name: dhcp-client
+  - name: dhcp-common
+  - name: dhcp-libs
+  - name: dhcp-server
   - name: dnf
   - name: dnf-automatic
   - name: dnf-plugins-core
@@ -163,6 +167,7 @@ BaseOS:
   - name: polkit
   - name: polkit-docs
   - name: postfix
+  - name: procps-ng
   - name: quota
   - name: quota-rpc
   - name: readline
@@ -258,6 +263,7 @@ AppStream:
   - name: acpid
   - name: aide
   - name: annobin
+  - name: bind
   - name: bind-utils
   - name: centos-backgrounds
   - name: centos-logos-ipa
@@ -289,6 +295,11 @@ AppStream:
   - name: perl-NetAddr-IP
   - name: python3-argcomplete # not part of a module
   - name: redhat-lsb
+  - name: redhat-lsb-core
+  - name: redhat-lsb-cxx
+  - name: redhat-lsb-desktop
+  - name: redhat-lsb-languages
+  - name: redhat-lsb-printing
   - name: rpm-build
   - name: rpm-mpi-hooks
   - name: rpm-ostree
@@ -305,12 +316,15 @@ AppStream:
   - name: scap-security-guide
   - name: sysstat
   - name: sysfsutils
+  - name: tftp
+  - name: tftp-server
   - name: tigervnc
   - name: tigervnc-server
   - name: tlog
   - name: tokyocabinet
   - name: urlview
   - name: vim-enhanced
+  - name: xinetd
 
 extras:
   url: http://mirror.centos.org/centos/8/extras/x86_64/os/
