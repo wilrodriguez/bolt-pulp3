@@ -302,6 +302,7 @@ class Pulp3RpmRepoSlimmer
             'name'            => name,
             'url'             => remote_url,
             'policy'          => 'on_demand',
+            # mirror            => true,
             #'pulp_labels'    => pulp_labels,
             #'tls_validation' => false,
           }.merge( pulp_remote_options ).transform_keys(&:to_sym)
@@ -315,7 +316,7 @@ class Pulp3RpmRepoSlimmer
 
         rpm_repository_sync_url = PulpRpmClient::RpmRepositorySyncURL.new(
           remote: remotes_data.pulp_href,
-          mirror: true
+          sync_policy: 'mirror_content_only'
         )
         @log.verbose("Running sync for Remote '#{name}'")
         sync_async_info = @ReposAPI.sync(repo.pulp_href, rpm_repository_sync_url)
@@ -818,10 +819,6 @@ class Pulp3RpmRepoSlimmer
     repos_to_mirror.each do |name, data|
       repo = ensure_rpm_repo(name, pulp_labels)
       url = data['url']
-      #### TODO: local mirror option
-      ###local = (data['pulp_remote_options']||{}).delete('local')
-      ###host_local_webserver =
-      ###if dd
 
       rpm_rpm_repository_version_href = create_rpm_repo_mirror(
         name: name,
@@ -1228,16 +1225,16 @@ options = parse_options
 
 # Default label to filesystem and URL-safe version of repos_to_mirror_file path
 unless options[:pulp_session_label]
-  str = options[:repos_to_mirror_file].downcase.gsub(/[^a-z0-9\-]+/i, '-').sub(/-(yaml|yml)$/i,'')
+  str = options[:repos_to_mirror_file].downcase.gsub(/[^a-z0-9\-]+/i, '-').sub(/-(yaml|yml)$/i,'').gsub(/^-*/,'')
   options[:pulp_session_label] = File.basename( str )
 end
 
 # Default label to filesystem and URL-safe version of repos_to_mirror_file path
 unless options[:pulp_distro_base_path]
-  str = options[:repos_to_mirror_file].gsub(/[^a-z0-9\-\.\/]+/i, '-').sub(/\.(yaml|yml)$/i,'').sub(/^build\//i,'')
+  str = options[:repos_to_mirror_file].gsub(/[^a-z0-9\-\.\/]+/i, '-').gsub(%r[/?\.\./],'/').sub(/\.(yaml|yml)$/i,'').sub(/^build\//i,'')
   base = File.basename(str)
   dirs = File.dirname(str).sub(%r{/?$},'')
-  options[:pulp_distro_base_path] = "#{base}/#{dirs}"
+  options[:pulp_distro_base_path] = "#{base}/#{dirs}".gsub(%r[//+],'/')
 end
 
 puts options.to_yaml
