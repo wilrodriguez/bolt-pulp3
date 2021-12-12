@@ -1,0 +1,24 @@
+{
+  "name": "simp-pulp3",
+  "version": "0.1.0",
+  "author": "SIMP Team",
+  "summary": "RELENG plans to manage Pulp3-in-one-container",
+  "license": "Apache-2.0",
+  "source": "https://github.com/simp/bolt-pulp3",
+  "project_page": "https://github.com/simp/bolt-pulp3",
+  "issues_url": "https://simp-project.atlassian.net",
+  "tags": [
+    "simp",
+    "pulp"
+  ],
+  "dependencies": [
+  ],
+  "operatingsystem_support": [
+  ],
+  "requirements": [
+    {
+      "name": "puppet",
+      "version_requirement": ">= 6.22.1 < 8.0.0"
+    }
+  ]
+}
