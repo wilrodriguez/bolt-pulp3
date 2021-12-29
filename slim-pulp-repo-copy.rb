@@ -560,7 +560,18 @@ class Pulp3RpmRepoSlimmer
       @log.verbose("No modulemds given for repo #{repo_version_href}; skipping get_modulemd_hrefs")
       return []
     end
-    reqs = modmd_reqs.map{|x| y = x['stream'].split(':',2); {name: y[0], stream: y[1]}   }.uniq
+    reqs = modmd_reqs.map do |x|
+      y = x['stream'].split(':')
+      {
+        name: y[0],
+        stream: y[1],
+        version: y[2],
+        context: y[3],
+        arch: y[4],
+      }
+    end
+
+    reqs.uniq!
     limit = 100
     results = []
 
@@ -572,6 +583,7 @@ class Pulp3RpmRepoSlimmer
     until offset > 0 && next_url.nil? do
       @log.verbose( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
 
+
       paginated_response_list = @ContentModulemdsAPI.list({
         repository_version: repo_version_href,
         # In this case, the *__in: params take an actual array and *not( a
@@ -580,8 +592,19 @@ class Pulp3RpmRepoSlimmer
         stream__in: reqs.map{|x| x[:stream] },
         fields: 'name,stream,version,context,arch,pulp_href',
       })
+
+      # GET rpm/modulmds/ does not accept query parameters to filter by module
+      # version, context, or arch, so we do it with the results
       selected_results = paginated_response_list.results.select do |x|
-        reqs.any?{|r| x.name == r[:name] && x.stream == r[:stream] }
+        reqs.any? do |r|
+          ns_ok = x.name == r[:name] && x.stream == r[:stream]
+          # V:C:A are optional fields in the yaml file's modules
+          # so only fail if they aren specified bu don't match
+          v_ok = r[:version] ? x.version == r[:version]: true
+          c_ok = r[:context] ? x.context == r[:context] : true
+          a_ok = r[:arch] ? x.arch == r[:arch] : true
+          ns_ok && v_ok && c_ok && a_ok
+        end
       end || []
       api_results += selected_results
       offset += selected_results.size
