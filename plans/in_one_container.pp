@@ -16,6 +16,7 @@ plan pulp3::in_one_container (
   Boolean                        $skip_filesystem    = false,
   Optional[Sensitive[String[1]]] $admin_password     = Sensitive.new(system::env('PULP3_ADMIN_PASSWORD').lest||{'admin'}),
   Optional[Enum[podman,docker]]  $runtime            = undef,
+  String[1]                      $log_level          = 'INFO',
   # FIXME not set up yet:
   Array[Stdlib::AbsolutePath] $import_paths          = lookup('pulp3::in_one_container::import_paths')|$k|{
     [ "${container_root}/run/ISOs/unpacked" ]
@@ -51,10 +52,17 @@ plan pulp3::in_one_container (
       'host'           => $host,
       'runtime_exe'    => $runtime_exe,
       'container_name' => $container_name,
-      'container_port' => $container_port
-    }
-  )
+  })
 
+  $settings_result = run_plan(
+    'pulp3::in_one_container::create_settings', {
+      'host'           => $host,
+      'runtime_exe'    => $runtime_exe,
+      'container_name' => $container_name,
+      'container_port' => $container_port,
+      'host_baseurl'   => 'http://127.0.0.1',
+      'log_level'      => $log_level,
+  })
   $start_cmd = @("START_CMD"/n)
     ${runtime_exe} run --detach \
       --name "${container_name}" \
