@@ -1275,18 +1275,17 @@ options = parse_options
 
 # Default label to filesystem and URL-safe version of repos_to_mirror_file path
 unless options[:pulp_session_label]
-  str = options[:repos_to_mirror_file].downcase.gsub(/[^a-z0-9\-]+/i, '-').sub(/-(yaml|yml)$/i,'').gsub(/^-*/,'')
+  str = options[:repos_to_mirror_file].downcase.gsub(/[^a-z0-9\-]+/i, '-').sub(/[\.-](yaml|yml)$/i,'').gsub(/^-*/,'')
   options[:pulp_session_label] = File.basename( str )
 end
 
 # Default label to filesystem and URL-safe version of repos_to_mirror_file path
 unless options[:pulp_distro_base_path]
-  str = options[:repos_to_mirror_file].gsub(/[^a-z0-9\-\.\/]+/i, '-').gsub(%r[/?\.\./],'/').sub(/\.(yaml|yml)$/i,'').sub(/^build\//i,'')
+  str = options[:repos_to_mirror_file].gsub(/[^a-z0-9\-\/]+/i, '-').gsub(%r[/?\.\.?/],'/').sub(/[\.-](yaml|yml)$/i,'').sub(/^build\//i,'')
   base = File.basename(str)
   dirs = File.dirname(str).sub(%r{/?$},'')
-  options[:pulp_distro_base_path] = "#{base}/#{dirs}".gsub(%r[//+],'/')
+  options[:pulp_distro_base_path] = "#{base}/#{dirs}".gsub(%r[/[/.]+],'/').gsub(%r[/$],'')
 end
-
 puts options.to_yaml
 p ARGV
 
