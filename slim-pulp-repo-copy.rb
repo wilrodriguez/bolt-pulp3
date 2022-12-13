@@ -1046,6 +1046,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       next_url = nil
       @log.verbose( "Getting versions info for repo #{data[:source_repo_unique_name]}:")
 
+      first=true
       until offset > 0 && next_url.nil? do
         ###@log.debug( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
         @log.verbose( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
@@ -1061,6 +1062,9 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
         offset += paginated_package_response_list.results.size
         next_url = paginated_package_response_list._next
         api_result_count = paginated_package_response_list.count
+
+        break if offset == 0 && next_url.nil? && first
+        first=false
       end
 
       repo_to_mirror = repos_to_mirror[data[:source_repo_unique_name]]
