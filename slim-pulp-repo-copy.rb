@@ -744,8 +744,19 @@ class Pulp3RpmRepoSlimmer
       if rpm_req['version']
         size = n_rpms.size
         n_rpms.select! do |r|
-          # TODO: logic to compare release and epoch
-          Gem::Dependency.new('', rpm_req['version']).match?('', Gem::Version.new(r.version))
+          found_match = false
+
+          # If the version in the file contains a space, perform a fuzzy version match
+          if rpm_req['version'].include?(' ')
+            found_match = Gem::Dependency.new('', rpm_req['version']).match?('', Gem::Version.new(r.version))
+          else
+            found_match = (rpm_req['version'] == r.version)
+            found_match = (rpm_req['epoch'] == r.epoch) if found_match && rpm_req['epoch']
+            found_match = (rpm_req['release'] == r.release) if found_match && rpm_req['release']
+            found_match = (rpm_req['arch'] == r.arch) if found_match && rpm_req['arch']
+          end
+
+          found_match
         end
         # fail/@log.warn when no RPMs meet constraints
         raise "ERROR: No '#{rpm_name}' RPMs met the version constraint: '#{rpm_req['version']}' (#{size} considered)" if n_rpms.empty?
@@ -757,10 +768,9 @@ class Pulp3RpmRepoSlimmer
 
         # pick the best RPM version (NEVR) for each arc
         nevr_rpms = na_rpms.sort do |a,b|
-          next(a.epoch <=> b.epoch) unless ((a.epoch <=> b.epoch) == 0)
-          next(a.version <=> b.version) unless ((a.version <=> b.version) == 0)
-          a.release <=> b.release
+          [a.epoch, a.version, a.release] <=> [b.epoch, b.version, b.release]
         end
+
         n_results << nevr_rpms.last
       end
 
