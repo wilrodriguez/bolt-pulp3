@@ -302,6 +302,8 @@ class Pulp3RpmRepoSlimmer
             'name'            => name,
             'url'             => remote_url,
             'policy'          => 'on_demand',
+            # 'retain_repo_versions' => 1,
+            # options intentionally not used:
             # mirror            => true,
             #'pulp_labels'    => pulp_labels,
             #'tls_validation' => false,
@@ -743,21 +745,30 @@ class Pulp3RpmRepoSlimmer
       # filter candidates based on constraints
       if rpm_req['version']
         size = n_rpms.size
-        n_rpms.select! do |r|
+        found_match = n_rpms.select! do |r|
           found_match = false
 
           # If the version in the file contains a space, perform a fuzzy version match
-          if rpm_req['version'].include?(' ')
-            found_match = Gem::Dependency.new('', rpm_req['version']).match?('', Gem::Version.new(r.version))
-          else
-            found_match = (rpm_req['version'] == r.version)
-            found_match = (rpm_req['epoch'] == r.epoch) if found_match && rpm_req['epoch']
-            found_match = (rpm_req['release'] == r.release) if found_match && rpm_req['release']
-            found_match = (rpm_req['arch'] == r.arch) if found_match && rpm_req['arch']
-          end
+          ###FIXME: if rpm_req['version'].is_a?(Array) || rpm_req['version'].match(/<|>|=| /)
+          dep_constraints = rpm_req['version'].dup
+          dep_constraints = [ dep_constraints ] if dep_constraints.is_a?(String)
+          dep_constraints.map! { |x| x.match(/<|>|=| /) ? x : "= #{x}" }
+
+          require 'pry'; binding.pry if dep_constraints.none?{|x| x =~ /<|>|=| /}
+
+          found_match = Gem::Dependency.new('', rpm_req['version']).match?('', Gem::Version.new(r.version))
+
+          found_match = (rpm_req['epoch'] == r.epoch) if found_match && rpm_req['epoch']
+          found_match = (rpm_req['release'] == r.release) if found_match && rpm_req['release']
+          found_match = (rpm_req['arch'] == r.arch) if found_match && rpm_req['arch']
+
 
           found_match
         end
+
+          if !found_match && rpm_req['name'] == 'python3-lib389'
+            require 'pry'; binding.pry
+          end
         # fail/@log.warn when no RPMs meet constraints
         raise "ERROR: No '#{rpm_name}' RPMs met the version constraint: '#{rpm_req['version']}' (#{size} considered)" if n_rpms.empty?
       end
