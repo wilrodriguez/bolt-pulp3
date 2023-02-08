@@ -10,6 +10,7 @@ gem 'pulp_rpm_client'
 gem 'bindata'
 gem 'down'
 gem 'logging'
+gem 'pry'
 
 group :development do
   gem 'puppet-lint'

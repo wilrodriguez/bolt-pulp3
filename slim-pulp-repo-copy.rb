@@ -6,7 +6,31 @@ require 'yaml'
 require 'fileutils'
 require 'tempfile'
 
-PULP_HOST = "http://localhost:#{ENV['PULP_PORT'] || `/opt/puppetlabs/bolt/bin/bolt lookup --plan-hierarchy pulp3::server_port`.strip.to_i || 8080}"
+# Workaround to let bundler run bolt
+BOLT_CMD=(<<~CLEAN_BOLT_ENV
+env \
+  -u GEM_HOME \
+  -u GEM_PATH \
+  -u DLN_LIBRARY_PATH \
+  -u RUBYLIB \
+  -u RUBYLIB_PREFIX \
+  -u RUBYOPT \
+  -u RUBYPATH \
+  -u RUBYSHELL \
+  -u LD_LIBRARY_PATH \
+  -u LD_PRELOAD \
+  BOLT_ORIG_GEM_PATH=$GEM_PATH \
+  BOLT_ORIG_GEM_HOME=$GEM_HOME \
+  BOLT_ORIG_RUBYLIB=$RUBYLIB \
+  BOLT_ORIG_RUBYLIB_PREFIX=$RUBYLIB_PREFIX \
+  BOLT_ORIG_RUBYOPT=$RUBYOPT \
+  BOLT_ORIG_RUBYPATH=$RUBYPATH \
+  BOLT_ORIG_RUBYSHELL=$RUBYSHELL \
+  /opt/puppetlabs/bolt/bin/bolt
+CLEAN_BOLT_ENV
+).gsub(/\s+/, ' ').strip
+
+PULP_HOST = "http://localhost:#{ENV['PULP_PORT'] || `#{BOLT_CMD} lookup --plan-hierarchy pulp3::server_port`.strip.to_i || 8080}"
 
 # Mirrors & copies RPMs from multiple repos into "slim" subset repositories,
 #   including all RPM and modular dependencies.
@@ -80,19 +104,20 @@ class Pulp3RpmRepoSlimmer
       config.debugging = ENV['DEBUG'].to_s.match?(/yes|true|1/i) # TODO parameter
     end
 
-    @ReposAPI                = PulpRpmClient::RepositoriesRpmApi.new
-    @RemotesAPI              = PulpRpmClient::RemotesRpmApi.new
-    @RepoVersionsAPI         = PulpRpmClient::RepositoriesRpmVersionsApi.new
-    @PublicationsAPI         = PulpRpmClient::PublicationsRpmApi.new
-    @DistributionsAPI        = PulpRpmClient::DistributionsRpmApi.new
-    @ContentPackagesAPI      = PulpRpmClient::ContentPackagesApi.new
-    @ContentPackagegroupsAPI = PulpRpmClient::ContentPackagegroupsApi.new
-    @ContentModulemdsAPI     = PulpRpmClient::ContentModulemdsApi.new
-    @RpmCopyAPI              = PulpRpmClient::RpmCopyApi.new
+    @ReposAPI                   = PulpRpmClient::RepositoriesRpmApi.new
+    @RemotesAPI                 = PulpRpmClient::RemotesRpmApi.new
+    @RepoVersionsAPI            = PulpRpmClient::RepositoriesRpmVersionsApi.new
+    @PublicationsAPI            = PulpRpmClient::PublicationsRpmApi.new
+    @DistributionsAPI           = PulpRpmClient::DistributionsRpmApi.new
+    @ContentPackagesAPI         = PulpRpmClient::ContentPackagesApi.new
+    @ContentPackagegroupsAPI    = PulpRpmClient::ContentPackagegroupsApi.new
+    @ContentModulemdsAPI        = PulpRpmClient::ContentModulemdsApi.new
+    @ContentModulemdDefaultsAPI = PulpRpmClient::ContentModulemdDefaultsApi.new
+    @RpmCopyAPI                 = PulpRpmClient::RpmCopyApi.new
 
-    @TasksAPI                = PulpcoreClient::TasksApi.new
-    @ArtifactsAPI            = PulpcoreClient::ArtifactsApi.new
-    @UploadsAPI              = PulpcoreClient::UploadsApi.new
+    @TasksAPI                   = PulpcoreClient::TasksApi.new
+    @ArtifactsAPI               = PulpcoreClient::ArtifactsApi.new
+    @UploadsAPI                 = PulpcoreClient::UploadsApi.new
   end
 
   def wait_for_task_to_complete(task, opts = {})
@@ -145,7 +170,12 @@ class Pulp3RpmRepoSlimmer
       @log.verbose "Repo '#{name}' already exists, moving on..."
       repos_data = repos_list.results[0]
     else
-      rpm_rpm_repository = PulpRpmClient::RpmRpmRepository.new(name: name, pulp_labels: labels)
+      rpm_rpm_repository = PulpRpmClient::RpmRpmRepository.new(
+        name: name,
+        pulp_labels: labels,
+        retain_repo_versions: 1,     # Significant speedup
+        retain_package_versions: 2,  # Note: can't combine with mirror_content_only sync policy
+      )
       repos_data = @ReposAPI.create(rpm_rpm_repository, opts)
     end
     @log.success("Finished: Ensuring that RPM repo '#{name}' exists (idempotently)")
@@ -299,10 +329,9 @@ class Pulp3RpmRepoSlimmer
 
           # By default, only download RPMs on demand (wait until requested)
           remote_opts = {
-            'name'            => name,
-            'url'             => remote_url,
-            'policy'          => 'on_demand',
-            # 'retain_repo_versions' => 1,
+            'name'                    => name,
+            'url'                     => remote_url,
+            'policy'                  => 'on_demand',
             # options intentionally not used:
             # mirror            => true,
             #'pulp_labels'    => pulp_labels,
@@ -318,7 +347,9 @@ class Pulp3RpmRepoSlimmer
 
         rpm_repository_sync_url = PulpRpmClient::RpmRepositorySyncURL.new(
           remote: remotes_data.pulp_href,
-          sync_policy: 'mirror_content_only'
+          sync_policy: 'additive',
+          skip_types: []            # This should be default, making _sure_
+          # optimize: true
         )
         @log.verbose("Running sync for Remote '#{name}'")
         sync_async_info = @ReposAPI.sync(repo.pulp_href, rpm_repository_sync_url)
@@ -557,11 +588,7 @@ class Pulp3RpmRepoSlimmer
     @RepoVersionsAPI.read(publication.repository_version)
   end
 
-  def get_modulemd_hrefs(repo_version_href, modmd_reqs)
-    unless modmd_reqs && modmd_reqs.size > 0
-      @log.verbose("No modulemds given for repo #{repo_version_href}; skipping get_modulemd_hrefs")
-      return []
-    end
+  def modmd_reqs_to_hashes( modmd_reqs )
     reqs = modmd_reqs.map do |x|
       y = x['stream'].split(':')
       {
@@ -572,8 +599,58 @@ class Pulp3RpmRepoSlimmer
         arch: y[4],
       }
     end
+  end
 
-    reqs.uniq!
+
+  def get_modulemd_defaults_hrefs(repo_version_href, modmd_reqs)
+    unless modmd_reqs && modmd_reqs.size > 0
+      @log.verbose("No modulemd_defaults given for repo #{repo_version_href}; skipping get_modulemd_defaults_hrefs")
+      return []
+    end
+    reqs = modmd_reqs_to_hashes( modmd_reqs ).uniq
+    limit = 100
+    results = []
+
+    api_results = []
+    api_result_count = nil
+    offset = 0
+    next_url = nil
+
+    until offset > 0 && next_url.nil? do
+      @log.verbose( "  pagination: #{offset}#{api_result_count ? ", total considered: #{offset}/#{api_result_count}" : ''} ")
+
+      paginated_response_list = @ContentModulemdDefaultsAPI.list({
+        repository_version: repo_version_href,
+        name__in: reqs.map{|x| x[:name] },
+        stream__in: reqs.map{|x| x[:stream] },
+      })
+      selected_results = paginated_response_list.results || []
+      api_results += selected_results
+      offset += selected_results.size
+      next_url = paginated_response_list._next
+      api_result_count = paginated_response_list.count
+      require 'pry'; binding.pry if paginated_response_list.results.size == 0
+    end
+
+    # Not all modules have defaults
+    missing = reqs.select {|x| api_results.none?{|y| x[:name] == y._module && x[:stream] == y.stream }}.map{|x| x[:name] }.uniq
+    unless missing.empty?
+      repo = @ReposAPI.read(File.dirname(File.dirname(repo_version_href))+'/')
+      msg = "\nNOTICE: Some modules have no modulemd_defaults in repo #{repo.name} (this is normal):\n  - #{missing.join("\n  - ")}\n\n"
+      @log.verbose msg
+      warn msg
+    end
+
+    api_results.map{|x| x.pulp_href }
+  end
+
+  def get_modulemd_hrefs(repo_version_href, modmd_reqs)
+    unless modmd_reqs && modmd_reqs.size > 0
+      @log.verbose("No modulemds given for repo #{repo_version_href}; skipping get_modulemd_hrefs")
+      return []
+    end
+    reqs = modmd_reqs_to_hashes( modmd_reqs ).uniq
+
     limit = 100
     results = []
 
@@ -745,16 +822,12 @@ class Pulp3RpmRepoSlimmer
       # filter candidates based on constraints
       if rpm_req['version']
         size = n_rpms.size
-        found_match = n_rpms.select! do |r|
+        n_rpms.select! do |r|
           found_match = false
 
-          # If the version in the file contains a space, perform a fuzzy version match
-          ###FIXME: if rpm_req['version'].is_a?(Array) || rpm_req['version'].match(/<|>|=| /)
           dep_constraints = rpm_req['version'].dup
           dep_constraints = [ dep_constraints ] if dep_constraints.is_a?(String)
           dep_constraints.map! { |x| x.match(/<|>|=| /) ? x : "= #{x}" }
-
-          require 'pry'; binding.pry if dep_constraints.none?{|x| x =~ /<|>|=| /}
 
           found_match = Gem::Dependency.new('', rpm_req['version']).match?('', Gem::Version.new(r.version))
 
@@ -766,9 +839,6 @@ class Pulp3RpmRepoSlimmer
           found_match
         end
 
-          if !found_match && rpm_req['name'] == 'python3-lib389'
-            require 'pry'; binding.pry
-          end
         # fail/@log.warn when no RPMs meet constraints
         raise "ERROR: No '#{rpm_name}' RPMs met the version constraint: '#{rpm_req['version']}' (#{size} considered)" if n_rpms.empty?
       end
@@ -820,7 +890,7 @@ class Pulp3RpmRepoSlimmer
       config << {
         'source_repo_version' => data[:source_repo_version_href],
         'dest_repo' => data[:pulp_href],
-        'content' => data[:required_rpm_hrefs] + data[:required_packagegroup_hrefs] + data[:required_modulemd_hrefs],
+        'content' => data[:required_rpm_hrefs] + data[:required_packagegroup_hrefs] + data[:required_modulemd_hrefs] + data[:required_modulemd_d_hrefs],
       }
     end
 
@@ -896,6 +966,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       required_rpm_hrefs = get_rpm_hrefs(source_repo_version_href, data['rpms']||[] )
       required_pkggrp_hrefs = get_packagegroup_hrefs(source_repo_version_href, data['packagegroups']||[])
       required_modulemd_hrefs = get_modulemd_hrefs(source_repo_version_href, data['modules']||[])
+      required_modulemd_d_hrefs = get_modulemd_defaults_hrefs(source_repo_version_href, data['modules']||[])
 
       slim_repo_name = name + '.slim'
       repo = ensure_rpm_repo(slim_repo_name, pulp_labels)
@@ -909,6 +980,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       slim_repos[slim_repo_name][:required_rpm_hrefs] = required_rpm_hrefs
       slim_repos[slim_repo_name][:required_packagegroup_hrefs] = required_pkggrp_hrefs
       slim_repos[slim_repo_name][:required_modulemd_hrefs] = required_modulemd_hrefs
+      slim_repos[slim_repo_name][:required_modulemd_d_hrefs] = required_modulemd_d_hrefs
       @log.success("Slim repo mirror '#{slim_repo_name}' exists to copy from '#{name}'")
     end
     slim_repos
@@ -1143,7 +1215,6 @@ def parse_options
   options = {
     action: :create_new_only,
     repos_to_mirror_file: nil,
-    # FIXME: change/require?
     pulp_session_label: nil,
     pulp_distro_base_path: nil,
     pulp_user: 'admin',
