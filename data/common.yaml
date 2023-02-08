@@ -3,7 +3,7 @@ pulp3::server_url: http://localhost
 pulp3::server_port: 8080
 
 pulp3::in_one_container::container_name: pulp
-pulp3::in_one_container::container_image: docker.io/pulp/pulp:3.15
+pulp3::in_one_container::container_image: docker.io/pulp/pulp:3.19
 pulp3::in_one_container::container_port: "%{alias('pulp3::server_port')}"
 
 pulp3::in_one_container::django_log: '/var/run/django-info.log'
