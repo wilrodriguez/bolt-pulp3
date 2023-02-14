@@ -2,23 +2,24 @@
 
 <!-- vim-markdown-toc GFM -->
 
-* [Overview](#overview)
-  * [Setup](#setup)
-    * [Setup Requirements](#setup-requirements)
-      * [OS requirements](#os-requirements)
-      * [OS Storage requirements](#os-storage-requirements)
-      * [Runtime dependencies](#runtime-dependencies)
-      * [Avoiding conflicts with RubyGems/RVM](#avoiding-conflicts-with-rubygemsrvm)
-    * [Initial setup](#initial-setup)
-    * [Beginning with the repo slimmer](#beginning-with-the-repo-slimmer)
-  * [Usage](#usage)
-    * [(Bolt) Provisioning the Pulp container](#bolt-provisioning-the-pulp-container)
-    * [(Script) `slim-pulp-repo-copy.rb` - Use Pulp to create slim repo mirrors](#script-slim-pulp-repo-copyrb---use-pulp-to-create-slim-repo-mirrors)
-    * [(Script) `_*.reposync.sh`: Mirror all slim repos into a local directory](#script-_reposyncsh-mirror-all-slim-repos-into-a-local-directory)
-    * [(You) Taking the repos and building SIMP](#you-taking-the-repos-and-building-simp)
-    * [(Bolt) Destroying the Pulp container](#bolt-destroying-the-pulp-container)
-      * [Destroying container, but preserving volumes (persists Pulp data)](#destroying-container-but-preserving-volumes-persists-pulp-data)
-      * [Destroying both container + volumes w/data (wipes Pulp clean)](#destroying-both-container--volumes-wdata-wipes-pulp-clean)
+- [Proof-of-concept Pulp3 Bolt project + modular repo mirror-slimmer](#proof-of-concept-pulp3-bolt-project--modular-repo-mirror-slimmer)
+  - [Overview](#overview)
+    - [Setup](#setup)
+      - [Setup Requirements](#setup-requirements)
+        - [OS requirements](#os-requirements)
+        - [OS Storage requirements](#os-storage-requirements)
+        - [Runtime dependencies](#runtime-dependencies)
+        - [Avoiding conflicts with RubyGems/RVM](#avoiding-conflicts-with-rubygemsrvm)
+      - [Initial setup](#initial-setup)
+      - [Beginning with the repo slimmer](#beginning-with-the-repo-slimmer)
+    - [Usage](#usage)
+      - [(Bolt) Provisioning the Pulp container](#bolt-provisioning-the-pulp-container)
+      - [(Script) `slim-pulp-repo-copy.rb` - Use Pulp to create slim repo mirrors](#script-slim-pulp-repo-copyrb---use-pulp-to-create-slim-repo-mirrors)
+      - [(Script) `_*.reposync.sh`: Mirror all slim repos into a local directory](#script-_reposyncsh-mirror-all-slim-repos-into-a-local-directory)
+      - [(You) Taking the repos and building SIMP](#you-taking-the-repos-and-building-simp)
+      - [(Bolt) Destroying the Pulp container](#bolt-destroying-the-pulp-container)
+        - [Destroying container, but preserving volumes (persists Pulp data)](#destroying-container-but-preserving-volumes-persists-pulp-data)
+        - [Destroying both container + volumes w/data (wipes Pulp clean)](#destroying-both-container--volumes-wdata-wipes-pulp-clean)
 
 <!-- vim-markdown-toc -->
 
@@ -83,7 +84,7 @@ The following components are needed to use all the features of this project.
     ```
 
 * You may also need to install `gcc` in order for Bolt to compile native ruby
-  gems during `/opt/puppetlabs/bolt/bin/gem install --user-install -g gem.deps.rb`:
+  gems during `/opt/puppetlabs/bolt/bin/bundle install`:
 
   * `gcc`
 
@@ -111,7 +112,7 @@ These dependencies can be installed by Bolt (see the [Initial
 setup](#initial-setup) section)
 
   * Puppet modules (defined in bolt project's `bolt-project.yaml`)
-  * Ruby Gems (defined in `gem.deps.rb`)
+  * RubyGems (defined in `Gemfile`)
 
 ##### Avoiding conflicts with RubyGems/RVM
 
@@ -141,8 +142,8 @@ with this project.
    command -v rvm && rvm use system
 
    # Install dependencies
-   /opt/puppetlabs/bolt/bin/bolt module install --force        # install Puppet modules
-   /opt/puppetlabs/bolt/bin/gem install --user -g gem.deps.rb  # install RubyGems
+   /opt/puppetlabs/bolt/bin/bolt module install --force  # install Puppet modules
+   /opt/puppetlabs/bolt/bin/bundle install               # install RubyGems
 
     # Verify `pulp3::` plans are visible
    bolt plan show
@@ -178,10 +179,10 @@ Mirror, filter, and resolve upstream repos into new "slim" repos for a distro:
 
 ```sh
 # See options for the ruby script
-./slim-pulp-repo-copy.rb --help
+ /opt/puppetlabs/bolt/bin/bundle exec ./slim-pulp-repo-copy.rb --help
 
 # Use Pulp to create slim versions of upstream repos
-./slim-pulp-repo-copy.rb --repos-rpms-file build/6.6.0/CentOS/8/x86_64/repo_packages.yaml
+/opt/puppetlabs/bolt/bin/bundle exec ./slim-pulp-repo-copy.rb --repos-rpms-file build/6.6.0/CentOS/8/x86_64/repo_packages.yaml
 ```
 
 After the script completes, run the following to check if there were problems

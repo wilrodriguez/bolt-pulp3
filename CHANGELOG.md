@@ -8,11 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Add the suffix `--simp` to the titles of all repos in
+  `simp-and-all-deps.repos` (avoids collisions with disabled repos)
+
 - Fix broken version constraint logic, tolerate operator-less versions
 - Add support for modulemd_defaults
 - Update to Pulp 3:19
   - Set `retain_repo_versions` and `retain_package_versions` for speed
-- Make env path safe for Bolt's built-in bundler
+- Make env path safe for Bolt's built-in `bundler`
 
 - Container volume support
 - New plan `pulp3::in_one_container::get_logs`, to fetch and review django logs
