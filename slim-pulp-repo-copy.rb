@@ -1043,7 +1043,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       echo "Adding '$repo' to .repo file..."
       cat << REPO >> "$YUMREPO_FILE"
 
-      [${repo}]
+      [${repo}--simp]
       name=${repo}
       enabled=1
       baseurl=${REPOS_BASEURL:-$PATH_TO_LOCAL_MIRROR}/${repo}
