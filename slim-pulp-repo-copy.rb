@@ -1052,6 +1052,12 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       repo_gpgcheck=${REPOS_REPOGPGPCHECK:-0}
       REPO
 
+      if [[ $repo == SIMP ]]; then
+        cd "$PATH_TO_LOCAL_MIRROR"
+        ln -s SIMP simp
+        printf "\nSymlinked '$repo' as 'simp'\n"
+      fi
+
       done
 
     REPO_GENERATOR
