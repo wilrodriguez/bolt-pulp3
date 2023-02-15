@@ -8,11 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Fix broken version constraint logic, tolerate operator-less versions
-- Add support for modulemd_defaults
+- Add support for `modulemd_defaults`
 - Update to Pulp 3:19
   - Set `retain_repo_versions` and `retain_package_versions` for speed
-- Make env path safe for Bolt's built-in bundler
+- Fix broken version constraint logic, tolerate operator-less versions
+- Make env path safe for Bolt's built-in `bundler`
+- New optional global `_options` key for bolt_pulp3_config file
+  - New option: `default_destination_repo_baseurl`
+- Add the suffix `--simp` to the titles of all repos in
+  `simp-and-all-deps.repos` (avoids collisions with disabled repos)
 
 - Container volume support
 - New plan `pulp3::in_one_container::get_logs`, to fetch and review django logs
@@ -26,13 +30,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Internal code simplifications
 
 ### Removed
+
 - (Incomplete) never-used plans `::rpm::mirror` and `::rpm::repo`
 
 ### Fixed
 
 - Filter for podman matching
 - Container destruction
-- Bumped the pulp image to 3.15 to fix EPEL issues
+- Bumped the pulp image to fix EPEL issues
+- Mirrored Module streams did not have default profiles or groups
 
 ## [0.3.0] - 2021-08-26
 
