@@ -2,24 +2,23 @@
 
 <!-- vim-markdown-toc GFM -->
 
-- [Proof-of-concept Pulp3 Bolt project + modular repo mirror-slimmer](#proof-of-concept-pulp3-bolt-project--modular-repo-mirror-slimmer)
-  - [Overview](#overview)
-    - [Setup](#setup)
-      - [Setup Requirements](#setup-requirements)
-        - [OS requirements](#os-requirements)
-        - [OS Storage requirements](#os-storage-requirements)
-        - [Runtime dependencies](#runtime-dependencies)
-        - [Avoiding conflicts with RubyGems/RVM](#avoiding-conflicts-with-rubygemsrvm)
-      - [Initial setup](#initial-setup)
-      - [Beginning with the repo slimmer](#beginning-with-the-repo-slimmer)
-    - [Usage](#usage)
-      - [(Bolt) Provisioning the Pulp container](#bolt-provisioning-the-pulp-container)
-      - [(Script) `slim-pulp-repo-copy.rb` - Use Pulp to create slim repo mirrors](#script-slim-pulp-repo-copyrb---use-pulp-to-create-slim-repo-mirrors)
-      - [(Script) `_*.reposync.sh`: Mirror all slim repos into a local directory](#script-_reposyncsh-mirror-all-slim-repos-into-a-local-directory)
-      - [(You) Taking the repos and building SIMP](#you-taking-the-repos-and-building-simp)
-      - [(Bolt) Destroying the Pulp container](#bolt-destroying-the-pulp-container)
-        - [Destroying container, but preserving volumes (persists Pulp data)](#destroying-container-but-preserving-volumes-persists-pulp-data)
-        - [Destroying both container + volumes w/data (wipes Pulp clean)](#destroying-both-container--volumes-wdata-wipes-pulp-clean)
+* [Overview](#overview)
+  * [Setup](#setup)
+    * [Setup Requirements](#setup-requirements)
+      * [OS requirements](#os-requirements)
+      * [OS Storage requirements](#os-storage-requirements)
+      * [Runtime dependencies](#runtime-dependencies)
+      * [Avoiding conflicts with RubyGems/RVM](#avoiding-conflicts-with-rubygemsrvm)
+    * [Initial setup](#initial-setup)
+    * [Beginning with the repo slimmer](#beginning-with-the-repo-slimmer)
+  * [Usage](#usage)
+    * [(Bolt) Provisioning the Pulp container](#bolt-provisioning-the-pulp-container)
+    * [(Script) `slim-pulp-repo-copy.rb` - Use Pulp to create slim repo mirrors](#script-slim-pulp-repo-copyrb---use-pulp-to-create-slim-repo-mirrors)
+    * [(Script) `_*.reposync.sh`: Mirror all slim repos into a local directory](#script-_reposyncsh-mirror-all-slim-repos-into-a-local-directory)
+    * [(You) Taking the repos and building SIMP](#you-taking-the-repos-and-building-simp)
+    * [(Bolt) Destroying the Pulp container](#bolt-destroying-the-pulp-container)
+      * [Destroying container, but preserving volumes (persists Pulp data)](#destroying-container-but-preserving-volumes-persists-pulp-data)
+      * [Destroying both container + volumes w/data (wipes Pulp clean)](#destroying-both-container--volumes-wdata-wipes-pulp-clean)
 
 <!-- vim-markdown-toc -->
 
@@ -179,10 +178,12 @@ Mirror, filter, and resolve upstream repos into new "slim" repos for a distro:
 
 ```sh
 # See options for the ruby script
- /opt/puppetlabs/bolt/bin/bundle exec ./slim-pulp-repo-copy.rb --help
+ /opt/puppetlabs/bolt/bin/bundle exec /opt/puppetlabs/bolt/bin/ruby ./slim-pulp-repo-copy.rb --help
 
 # Use Pulp to create slim versions of upstream repos
-/opt/puppetlabs/bolt/bin/bundle exec ./slim-pulp-repo-copy.rb --repos-rpms-file build/6.6.0/CentOS/8/x86_64/repo_packages.yaml
+/opt/puppetlabs/bolt/bin/bundle exec \
+  /opt/puppetlabs/bolt/bin/ruby \
+  ./slim-pulp-repo-copy.rb --repos-rpms-file build/6.6.0/CentOS/8/x86_64/repo_packages.yaml
 ```
 
 After the script completes, run the following to check if there were problems

@@ -68,6 +68,7 @@ class Pulp3RpmRepoSlimmer
     }
     @cache_dir = cache_dir
     @upload_chunk_size = upload_chunk_size
+    @default_destination_repo_baseurl = nil
 
     begin
       pulp_host_uri = URI(PULP_HOST)
@@ -1046,7 +1047,7 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       [${repo}--simp]
       name=${repo}
       enabled=1
-      baseurl=${REPOS_BASEURL:-$PATH_TO_LOCAL_MIRROR}/${repo}
+      baseurl=${REPOS_BASEURL:-#{ @default_destination_repo_baseurl || '$PATH_TO_LOCAL_MIRROR' }/${repo}}
       gpgcheck=${REPOS_GPGCHECK:-0}
       repo_gpgcheck=${REPOS_REPOGPGPCHECK:-0}
       REPO
@@ -1181,14 +1182,17 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
   end
 
   def do(action:, repos_to_mirror_file:)
-    repos_to_mirror = YAML.load_file(repos_to_mirror_file)
-
+    data = YAML.load_file(repos_to_mirror_file)
+    repos_to_mirror = data.reject{|k,v| k =~ /^_/ }.to_h
     labeled_repos_to_mirror = repos_to_mirror.map do |name, data|
       labeled_name = name.sub( /^/, "#{@build_name}.")
       labeled_data = data.dup
       labeled_data['name'] = name
       [ labeled_name, labeled_data ]
     end.to_h
+
+    meta = data.select{|k,v| k =~ /^_/ }.to_h
+    @default_destination_repo_baseurl = meta.dig('_options','default_destination_repo_baseurl')
 
     case action
     when :create_new
