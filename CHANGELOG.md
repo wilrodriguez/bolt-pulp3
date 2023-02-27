@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   from inside the running Pulp container
 - Created `CHANGELOG.md` for project
 - Updated RPMs in `build/**/*.yaml` files
+- Updated to Pulp API change in `ContentPackagesAPI.create`
 
 ### Changed
 

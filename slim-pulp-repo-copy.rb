@@ -285,7 +285,7 @@ class Pulp3RpmRepoSlimmer
     end
 
     async_response = @ContentPackagesAPI.create(
-      basename, {
+     {
         artifact: artifact.pulp_href,
         repository: repo.pulp_href,
       }
