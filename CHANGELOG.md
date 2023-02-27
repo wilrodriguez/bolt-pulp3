@@ -17,12 +17,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - New option: `default_destination_repo_baseurl`
 - Add the suffix `--simp` to the titles of all repos in
   `simp-and-all-deps.repos` (avoids collisions with disabled repos)
+- Generated reposync script automatically symlinks `SIMP` as `simp`
 
 - Container volume support
 - New plan `pulp3::in_one_container::get_logs`, to fetch and review django logs
   from inside the running Pulp container
 - Created `CHANGELOG.md` for project
 - Updated RPMs in `build/**/*.yaml` files
+- Updated to Pulp API change in `ContentPackagesAPI.create`
 
 ### Changed
 

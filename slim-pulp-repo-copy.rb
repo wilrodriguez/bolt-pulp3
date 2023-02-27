@@ -285,7 +285,7 @@ class Pulp3RpmRepoSlimmer
     end
 
     async_response = @ContentPackagesAPI.create(
-      basename, {
+     {
         artifact: artifact.pulp_href,
         repository: repo.pulp_href,
       }
@@ -1051,6 +1051,12 @@ require 'pry'; binding.pry unless rpm_rpm_repository_version_href
       gpgcheck=${REPOS_GPGCHECK:-0}
       repo_gpgcheck=${REPOS_REPOGPGPCHECK:-0}
       REPO
+
+      if [[ $repo == SIMP ]]; then
+        cd "$PATH_TO_LOCAL_MIRROR"
+        ln -s SIMP simp
+        printf "\nSymlinked '$repo' as 'simp'\n"
+      fi
 
       done
 
