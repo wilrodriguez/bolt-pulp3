@@ -41,6 +41,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Container destruction
 - Bumped the pulp image to fix EPEL issues
 - Mirrored Module streams did not have default profiles or groups
+- Duplicate RPM errors when using `direct_url` on new pulp instance
 
 ## [0.3.0] - 2021-08-26
 

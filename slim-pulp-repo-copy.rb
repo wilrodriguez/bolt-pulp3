@@ -290,12 +290,51 @@ class Pulp3RpmRepoSlimmer
         repository: repo.pulp_href,
       }
     )
-    created_resources = wait_for_create_task_to_complete(
-      async_response.task, { max_expected_resources: 2 }
-    )
-    rpm_rpm_repository_version_href = created_resources.select do |x|
-      x =~ %r[pulp/api/v3/repositories/rpm/rpm/.*/versions/]
-    end.first
+
+    begin
+      created_resources = wait_for_create_task_to_complete(
+        async_response.task, { max_expected_resources: 2 }
+      )
+
+      rpm_rpm_repository_version_href = created_resources.select do |x|
+        x =~ %r[pulp/api/v3/repositories/rpm/rpm/.*/versions/]
+      end.first
+
+    rescue RuntimeError => e
+      @log.warn "== Uploaded RPM is aready in repo: #{file_path}"
+      @log.debug e.message
+      raise e unless e.message =~ /There is already a package with/
+
+      # NOTE: this is a hack because I can't find a good way (yet_ to determine
+      # if an uploaded artifact is associated with an RPM (package content)in
+      # the target repository, so we grab the duplicate error info backwards
+      # and make sure its already in the target repo version
+
+      begin
+        @log.info "TODO remove me bc debugging: existing_rpm_list2"
+        _content_fields = e.message.split(/There is already a package with: +/).last.split(/.',/).first.split(/, /)
+        content_fields = _content_fields.map{|x| x.split(/=/) }.map{|x| [x.first.to_sym,x.last] }.to_h
+        latest_version_href =  @RepoVersionsAPI.list( repo.pulp_href ).results.first.pulp_href
+        content_fields[:repository_version] = latest_version_href
+        existing_rpm_list2 = @ContentPackagesAPI.list(content_fields)
+      rescue RuntimeError => e
+        @log.error e.message
+        require 'pry'; binding.pry
+      end
+
+      @log.info "TODO remove me bc debugging: past existing_rpm_list2"
+
+      if existing_rpm_list2.count > 0
+        @log.recovery "  -- confirmed RPM #{content_fields[:name]} is in target repo"
+        @log.debug "  -- using RPM RPM Repository version #{latest_version_href}"
+        rpm_rpm_repository_version_href = latest_version_href
+      else
+        @log.debug "  -- couldn't find RPM in  RPM RPM Repository version #{repo.latest_version_href}"
+        e.message = "#{e.message}\n\nPulp Repo Slimmer: This RPM was not found in the target repo #{latest_version_href}"
+        require 'pry'; binding.pry
+        raise e
+      end
+    end
 
     unless rpm_rpm_repository_version_href
       raise 'Somehow, the content packages task created resources, but not a new RPM repository version'
