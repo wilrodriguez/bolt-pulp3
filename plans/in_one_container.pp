@@ -87,4 +87,10 @@ plan pulp3::in_one_container (
     'targets'        => $host,
     'container_name' => $container_name,
   )
+
+  # TODO: optional automated post-install tasks
+  # - Creating/Uploading /allowed_imports/* content (RHEL ISOs, rpms)
+  # - Updating the pulp container
+  #
+  # Automating the build should be another plan at the same level as this logic (which should probably be refactored into a sub-plan
 }
