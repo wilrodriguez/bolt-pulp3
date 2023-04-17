@@ -4,7 +4,7 @@ plan pulp3::in_one_container::reset_admin_password (
   TargetSpec                     $targets        = 'localhost',
   String[1]                      $container_name = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
   Integer                        $max_retries    = 10,
-  Integer                        $sleep_seconds  = 2,
+  Integer                        $sleep_seconds  = 5,
   Optional[Sensitive[String[1]]] $admin_password = Sensitive.new(system::env('PULP3_ADMIN_PASSWORD').lest||{'admin'}),
   Optional[Enum[podman,docker]]  $runtime        = undef,
 
@@ -32,7 +32,7 @@ plan pulp3::in_one_container::reset_admin_password (
     }
 
     if $x == $max_retries{
-      return $reset_result
+      return $cmd_result
     }
   }
 }

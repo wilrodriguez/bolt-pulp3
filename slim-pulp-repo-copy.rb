@@ -311,7 +311,6 @@ class Pulp3RpmRepoSlimmer
       # and make sure its already in the target repo version
 
       begin
-        @log.info "TODO remove me bc debugging: existing_rpm_list2"
         _content_fields = e.message.split(/There is already a package with: +/).last.split(/.',/).first.split(/, /)
         content_fields = _content_fields.map{|x| x.split(/=/) }.map{|x| [x.first.to_sym,x.last] }.to_h
         latest_version_href =  @RepoVersionsAPI.list( repo.pulp_href ).results.first.pulp_href
@@ -322,14 +321,12 @@ class Pulp3RpmRepoSlimmer
         require 'pry'; binding.pry
       end
 
-      @log.info "TODO remove me bc debugging: past existing_rpm_list2"
-
       if existing_rpm_list2.count > 0
         @log.recovery "  -- confirmed RPM #{content_fields[:name]} is in target repo"
         @log.debug "  -- using RPM RPM Repository version #{latest_version_href}"
         rpm_rpm_repository_version_href = latest_version_href
       else
-        @log.debug "  -- couldn't find RPM in  RPM RPM Repository version #{repo.latest_version_href}"
+        @log.debug "  -- couldn't find RPM in RPM RPM Repository version #{repo.latest_version_href}"
         e.message = "#{e.message}\n\nPulp Repo Slimmer: This RPM was not found in the target repo #{latest_version_href}"
         require 'pry'; binding.pry
         raise e
@@ -397,7 +394,10 @@ class Pulp3RpmRepoSlimmer
         rpm_rpm_repository_version_href = nil
         if remote_already_exists
           task_result = wait_for_task_to_complete(sync_async_info.task)
-          if task_result.created_resources.empty? && task_result.progress_reports.first.code == 'sync.was_skipped'
+          if task_result.progress_reports.first.nil?
+            @log.error("wth  task_result.progress_reports.first is supposed to have a .code")
+            require 'pry'; binding.pry
+          elsif task_result.created_resources.empty? && task_result.progress_reports.first.code == 'sync.was_skipped'
             @log.verbose("Sync skipped for Remote '#{name}' (using href '#{repo.latest_version_href})'")
             rpm_rpm_repository_version_href = repo.latest_version_href
           end
@@ -676,7 +676,7 @@ class Pulp3RpmRepoSlimmer
     missing = reqs.select {|x| api_results.none?{|y| x[:name] == y._module && x[:stream] == y.stream }}.map{|x| x[:name] }.uniq
     unless missing.empty?
       repo = @ReposAPI.read(File.dirname(File.dirname(repo_version_href))+'/')
-      msg = "\nNOTICE: Some modules have no modulemd_defaults in repo #{repo.name} (this is normal):\n  - #{missing.join("\n  - ")}\n\n"
+      msg = "\nNOTICE: no modulemd_defaults in repo #{repo.name}.  Some modules don't have a default (this is normal):\n  - #{missing.join("\n  - ")}\n\n"
       @log.verbose msg
       warn msg
     end
@@ -875,12 +875,15 @@ class Pulp3RpmRepoSlimmer
           found_match = (rpm_req['release'] == r.release) if found_match && rpm_req['release']
           found_match = (rpm_req['arch'] == r.arch) if found_match && rpm_req['arch']
 
-
           found_match
         end
 
         # fail/@log.warn when no RPMs meet constraints
-        raise "ERROR: No '#{rpm_name}' RPMs met the version constraint: '#{rpm_req['version']}' (#{size} considered)" if n_rpms.empty?
+        if n_rpms.empty?
+          @log.error "ERROR: No '#{rpm_name}' RPMs met the version constraint: '#{rpm_req['version']}' (#{size} considered)"
+          require 'pry'; binding.pry
+          raise "ERROR: No '#{rpm_name}' RPMs met the version constraint: '#{rpm_req['version']}' (#{size} considered)"
+        end
       end
 
       # find the best RPM for each arch

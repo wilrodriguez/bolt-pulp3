@@ -12,11 +12,11 @@ plan pulp3::in_one_container (
   String[1]                      $container_name     = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
   String[1]                      $container_image    = lookup('pulp3::in_one_container::container_image')|$k|{'pulp/pulp'},
   Stdlib::Port                   $container_port     = lookup('pulp3::in_one_container::container_port')|$k|{8080},
-  Integer[0]                     $startup_sleep_time = 10,
+  Integer[0]                     $startup_sleep_time = lookup('pulp3::in_one_container::startup_sleep_time')|$k|{60},
   Boolean                        $skip_filesystem    = false,
   Optional[Sensitive[String[1]]] $admin_password     = Sensitive.new(system::env('PULP3_ADMIN_PASSWORD').lest||{'admin'}),
   Optional[Enum[podman,docker]]  $runtime            = undef,
-  String[1]                      $log_level          = 'INFO',
+  String[1]                      $log_level          = lookup('pulp3::in_one_container::log_level')|$k|{'INFO'},
   # FIXME not set up yet:
   Array[Stdlib::AbsolutePath] $import_paths          = lookup('pulp3::in_one_container::import_paths')|$k|{
     [ "${container_root}/run/ISOs/unpacked" ]
@@ -80,11 +80,17 @@ plan pulp3::in_one_container (
 
   $start_result = run_command($start_cmd, $host)
 
-  ctrl::sleep($startup_sleep_time)
   out::message("Waiting ${startup_sleep_time} seconds for pulp to start up...")
+  ctrl::sleep($startup_sleep_time)
   $admin_pw_result = run_plan(
     'pulp3::in_one_container::reset_admin_password',
     'targets'        => $host,
     'container_name' => $container_name,
   )
+
+  # TODO: optional automated post-install tasks
+  # - Creating/Uploading /allowed_imports/* content (RHEL ISOs, rpms)
+  # - Updating the pulp container
+  #
+  # Automating the build should be another plan at the same level as this logic (which should probably be refactored into a sub-plan
 }

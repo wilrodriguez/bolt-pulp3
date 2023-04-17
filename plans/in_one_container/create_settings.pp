@@ -9,7 +9,7 @@ plan pulp3::in_one_container::create_settings (
   String[1] $container_name,
   Stdlib::Port $container_port,
   Stdlib::HTTPUrl $host_baseurl = 'http://127.0.0.1', # $host.facts['fqdn']
-  Stdlib::AbsolutePath $django_log = lookup('pulp3::in_one_container::django_log')|$k|{'/var/run/django-info.log'},
+  Stdlib::AbsolutePath $django_log = lookup('pulp3::in_one_container::django_log')|$k|{'/tmp/django-info.log'},
   String[1] $log_level = 'INFO',
 ) {
 
@@ -33,20 +33,15 @@ plan pulp3::in_one_container::create_settings (
         },
         'handlers': {
             'console': {
+                'level': '${log_level}',
                 'class': 'logging.StreamHandler',
                 'formatter': 'console'
             },
-            'file': {
-                'level': '${log_level}',
-                'class': 'logging.FileHandler',
-                'formatter': 'file',
-                'filename': '${django_log}'
-            }
         },
         'loggers': {
             '': {
                 'level': '${log_level}',
-                'handlers': ['console', 'file']
+                'handlers': ['console']
             }
         }
     }
