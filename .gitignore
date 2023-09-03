@@ -39,3 +39,6 @@
 /settings/
 /pulp_storage/
 /.plan_cache.json
+/.task_cache.json
+bolt_pulp3_config.yaml
+Puppetfile

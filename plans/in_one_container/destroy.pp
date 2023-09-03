@@ -10,22 +10,23 @@
 plan pulp3::in_one_container::destroy (
   TargetSpec                    $targets         = 'localhost',
   String[1]                     $user            = system::env('USER'),
-  String[1]                     $container_name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
-  String[1]                     $container_image = lookup('pulp3::in_one_container::container_image')|$k|{'pulp/pulp'},
-  Optional[Enum[podman,docker]] $runtime         = undef,
-  Boolean                       $force           = lookup('pulp3::in_one_container::destroy::force')|$k|{ false },
-  Boolean                       $volumes         = lookup('pulp3::in_one_container::destroy::volumes')|$k|{ true },
+  String[1]                     $container_name  = lookup('pulp3::in_one_container::container_name')|$k| { 'pulp' },
+  String[1]                     $container_image = lookup('pulp3::in_one_container::container_image')|$k| { 'pulp/pulp' },
+  Optional[String]              $runtime         = undef,
+  Boolean                       $force           = lookup('pulp3::in_one_container::destroy::force')|$k| { false },
+  Boolean                       $volumes         = lookup('pulp3::in_one_container::destroy::volumes')|$k| { true },
 ) {
   $host = run_plan('pulp3::in_one_container::get_host',$targets)
-  $runtime_exe = $host.facts['pioc_runtime_exe']
+  $_runtime = $host.facts['pioc_runtime']
+  $_runtime_exe = $host.facts['available_runtimes'][$runtime]
 
   if run_plan( 'pulp3::in_one_container::match_container', {
-    'host'        => $host,
-    'name'        => $container_name,
-    'image'       => $container_image,
-    'all'         => true,
-    'runtime_exe' => $runtime_exe
-  }){
+      'host'        => $host,
+      'name'        => $container_name,
+      'image'       => $container_image,
+      'all'         => true,
+      'runtime_exe' => $_runtime_exe
+  }) {
     unless $force {
       $confirm = prompt::menu(
         "Destroy container '${container_name}'?",
@@ -38,7 +39,7 @@ plan pulp3::in_one_container::destroy (
       }
     }
     out::message( "Destroying container '${container_name}'..." )
-    $rm_result = run_command("${runtime_exe} container rm -f ${container_name}", $host)
+    $rm_result = run_command("${_runtime_exe} container rm -f ${container_name}", $host)
   }
   else {
     out::message( "Cannot find container '${container_name}'" )
@@ -49,7 +50,7 @@ plan pulp3::in_one_container::destroy (
       'pulp3::in_one_container::volumes::destroy',
       {
         'host'           => $host,
-        'runtime_exe'    => $runtime_exe,
+        'runtime_exe'    => $_runtime_exe,
         'container_name' => $container_name
       }
     )

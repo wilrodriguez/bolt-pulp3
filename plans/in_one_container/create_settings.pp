@@ -9,10 +9,9 @@ plan pulp3::in_one_container::create_settings (
   String[1] $container_name,
   Stdlib::Port $container_port,
   Stdlib::HTTPUrl $host_baseurl = 'http://127.0.0.1', # $host.facts['fqdn']
-  Stdlib::AbsolutePath $django_log = lookup('pulp3::in_one_container::django_log')|$k|{'/tmp/django-info.log'},
+  Stdlib::AbsolutePath $django_log = lookup('pulp3::in_one_container::django_log')|$k| { '/tmp/django-info.log' },
   String[1] $log_level = 'INFO',
 ) {
-
   $pulp_settings = @("SETTINGS"/n)
     CONTENT_ORIGIN='${host_baseurl}:${container_port}'
     ANSIBLE_API_HOSTNAME='${host_baseurl}:${container_port}'
@@ -48,8 +47,8 @@ plan pulp3::in_one_container::create_settings (
     | SETTINGS
 
   catch_errors() || {
-    $tmp_container_out         = run_command("${runtime_exe} run -id --name ${container_name}_tmp --volume ${container_name}-settings:/pulp centos:8", $host)
-    $create_settings_py_out    = run_command("(${runtime_exe} exec -i ${container_name}_tmp sh -c 'cat > /pulp/settings.py') << EOM\n${pulp_settings}\nEOM", $host)
+    $tmp_container_out         = run_command("${runtime_exe} run -id --name ${container_name}_tmp --volume ${container_name}-settings:/pulp centos:8", $host) # lint:ignore:140chars
+    $create_settings_py_out    = run_command("(${runtime_exe} exec -i ${container_name}_tmp sh -c 'cat > /pulp/settings.py') << EOM\n${pulp_settings}\nEOM", $host) # lint:ignore:140chars
     $destroy_tmp_container_out = run_command("${runtime_exe} rm -f ${container_name}_tmp", $host)
   }
 }
