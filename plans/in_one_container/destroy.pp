@@ -18,7 +18,7 @@ plan pulp3::in_one_container::destroy (
 ) {
   $host = run_plan('pulp3::in_one_container::get_host',$targets)
   $_runtime = $host.facts['pioc_runtime']
-  $_runtime_exe = $host.facts['available_runtimes'][$runtime]
+  $_runtime_exe = $host.facts['available_runtimes'][$_runtime]
 
   if run_plan( 'pulp3::in_one_container::match_container', {
       'host'        => $host,

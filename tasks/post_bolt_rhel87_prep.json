@@ -1,0 +1,15 @@
+{
+  "description": "Allows you to execute arbitrary SQL",
+  "input_method": "environment",
+  "parameters": {
+    "pulp_container_name": {
+      "description": "Name of Pulp container to update",
+      "default": "pulp",
+      "type": "String[1]"
+    },
+    "rhel_iso_root_dir": {
+      "description": "Absolute path to mounted or unpacked RHEL ISO directory",
+      "type": "Optional[Stdlib::Absolutepath]"
+    }
+  }
+}
