@@ -15,7 +15,7 @@ plan pulp3::in_one_container::volumes::create (
     'pgsql',
     'run',
     'settings',
-    'storage'
+    'storage',
   ],
   Boolean $noop = false,
 ) {
@@ -24,7 +24,7 @@ plan pulp3::in_one_container::volumes::create (
     '_description' => 'Ensure volumes exist for pulp container',
     '_noop' => $noop,
     '_catch_errors' => false,
-  ){
+  ) {
     $volume_names.each |String $volume_name| {
       $_vname = "${container_name}-${volume_name}"
 
@@ -33,12 +33,8 @@ plan pulp3::in_one_container::volumes::create (
         unless  => "${runtime_exe} volume inspect ${_vname}",
         path    => [
           '/bin',
-          '/usr/bin'
-        ]
+          '/usr/bin',
+        ],
       }
     }
-  }
-
-
-
-}
+} }

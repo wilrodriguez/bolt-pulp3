@@ -7,12 +7,13 @@
 #
 # Details at https://pulpproject.org/pulp-in-one-container/
 plan pulp3::in_one_container::match_container(
-  TargetSpec             $host,
-  Boolean                $all   = false,
-  String[1]              $name  = lookup('pulp3::in_one_container::container_name')|$k|{'pulp'},
-  String[1]              $image = lookup('pulp3::in_one_container::container_image')|$k|{'pulp/pulp'},
-  Optional[Stdlib::Port] $port  = undef,
-  Optional[String[1]]    $runtime_exe = $host.facts['pioc_runtime_exe']
+  TargetSpec                        $host,
+  Boolean                           $all         = false,
+  String[1]                         $name        = lookup('pulp3::in_one_container::container_name')|$k| { 'pulp' },
+  String[1]                         $image       = lookup('pulp3::in_one_container::container_image')|$k| { 'pulp/pulp' },
+  Optional[Stdlib::Port]            $port        = undef,
+  Optional[Enum['podman','docker']] $runtime     = $host.facts['pioc_runtime'],
+  Optional[String[1]]               $runtime_exe = $host.facts['available_runtimes'][$runtime],
 ) {
   $extra_args  = $all ? { true => '-a', default => '' }
 
