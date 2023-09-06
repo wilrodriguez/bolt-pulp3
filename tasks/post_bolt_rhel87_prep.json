@@ -7,6 +7,11 @@
       "default": "pulp",
       "type": "String[1]"
     },
+    "runtime_exe": {
+      "description": "Container executable (e.g., podman, docker)",
+      "default": "podman",
+      "type": "String[1]"
+    },    
     "rhel_iso_root_dir": {
       "description": "Absolute path to mounted or unpacked RHEL ISO directory",
       "type": "Optional[Stdlib::Absolutepath]"
