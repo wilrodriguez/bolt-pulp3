@@ -1,5 +1,5 @@
 {
-  "description": "Allows you to execute arbitrary SQL",
+  "description": "Preps a Pulp-in-one-container to slim-mirror RHEL8 packages from an unpacked/mounted ISO",
   "input_method": "environment",
   "parameters": {
     "pulp_container_name": {
