@@ -10,7 +10,7 @@ done
 
 PULP_CONTAINER_NAME="${PT_pulp_container_name:-pulp}"
 MOUNTED_ISO_ROOT_DIR="${PT_rhel_iso_root_dir:-"/run/media/$USER/RHEL-8-7-0-BaseOS-x86_64"}"
-RUNTIME_EXE=podman
+RUNTIME_EXE="${PT_runtime_exe:-podman}"
 
 echo "PULP_CONTAINER_NAME: '${PULP_CONTAINER_NAME}'"
 echo "MOUNTED_ISO_ROOT_DIR: '${MOUNTED_ISO_ROOT_DIR}'"
