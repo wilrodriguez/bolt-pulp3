@@ -8,9 +8,6 @@ for v in ${!PT_*}; do
   declare "${v#*PT_}"="${!v}"
 done
 
-
-env > /home/chris/src/simp-core-pretty/bolt-pulp3/BOLT.ENV.VARS.txt
-
 PULP_CONTAINER_NAME="${PT_pulp_container_name:-pulp}"
 MOUNTED_ISO_ROOT_DIR="${PT_rhel_iso_root_dir:-"/run/media/$USER/RHEL-8-7-0-BaseOS-x86_64"}"
 RUNTIME_EXE=podman
