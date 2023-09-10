@@ -17,10 +17,7 @@ plan pulp3::in_one_container (
   Optional[Sensitive[String[1]]] $admin_password     = Sensitive.new(system::env('PULP3_ADMIN_PASSWORD').lest|| { 'admin' }),
   Optional[Enum[podman,docker]]  $runtime            = undef,
   String[1]                      $log_level          = lookup('pulp3::in_one_container::log_level')|$k| { 'INFO' },
-  # FIXME not set up yet:
-  Array[Stdlib::AbsolutePath] $import_paths          = lookup('pulp3::in_one_container::import_paths')|$k| {
-    ["${container_root}/run/ISOs/unpacked"]
-  },
+  Array[Stdlib::AbsolutePath]    $import_paths       = lookup('pulp3::in_one_container::import_paths')|$k| { [] },
 ) {
   $host = run_plan('pulp3::in_one_container::get_host', 'targets' => $targets, 'runtime' => $runtime)
   $_runtime = $host.facts['pioc_runtime']
@@ -64,20 +61,27 @@ plan pulp3::in_one_container (
       'host_baseurl'   => 'http://127.0.0.1',
       'log_level'      => $log_level,
   })
-  $start_cmd = @("START_CMD"/n)
-    ${_runtime_exe} run --detach \
-      --name "${container_name}" \
-      --publish "${container_port}:80" \
-      --platform linux/amd64 \
-      --publish-all \
-      --device /dev/fuse \
-      --volume "${container_name}-settings:/etc/pulp" \
-      --volume "${container_name}-storage:/var/lib/pulp" \
-      --volume "${container_name}-pgsql:/var/lib/pgsql" \
-      --volume "${container_name}-containers:/var/lib/containers" \
-      --volume "${container_name}-run:/run" \
-      "${container_image}"
-    | START_CMD
+  $base_container_args = [
+    '--detach',
+    "--name ${container_name}",
+    "--publish ${container_port}:80",
+    '--platform linux/amd64',
+    '--publish-all',
+    '--device /dev/fuse',
+    "--volume '${container_name}-settings:/etc/pulp'",
+    "--volume '${container_name}-storage:/var/lib/pulp'",
+    "--volume '${container_name}-pgsql:/var/lib/pgsql'",
+    "--volume '${container_name}-containers:/var/lib/containers'",
+    "--volume '${container_name}-run:/run'",
+  ]
+  if $import_paths {
+    $container_args = $base_container_args + $import_paths.map |$path| { "--volume '${path}:/allowed_imports/${basename($path)}:ro'" }
+  } else {
+    $container_args = $base_container_args
+  }
+  $start_cmd = join([$_runtime_exe, 'run', *$container_args, $container_image], ' ')
+
+  out::message("Starting container with command: ${start_cmd}")
 
   $start_result = run_command($start_cmd, $host)
 
@@ -90,6 +94,12 @@ plan pulp3::in_one_container (
     'runtime'        => $runtime,
     'runtime_exe'    => $_runtime_exe,
   )
+
+  out::message('Installing pip pulp-rpm plugin...')
+  run_command("${_runtime_exe} exec '${container_name}' pip install --upgrade-strategy only-if-needed 'pulp-rpm>=3.19.4'", $host)
+
+  out::message('Restarting container to apply settings...')
+  run_command("${_runtime_exe} container restart '${container_name}'", $host)
 
   # TODO: optional automated post-install tasks
   # - Creating/Uploading /allowed_imports/* content (RHEL ISOs, rpms)
